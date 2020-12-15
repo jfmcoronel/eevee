@@ -4,7 +4,7 @@ import resolve
 # I prefer to use d8 to run the instrumented code, 
 # which should be fastest I believe.
 
-d8_path = "/home/soyeon/jsfuzz/js-static/engines/v8-latest/v8/out/Release/d8"
+d8_path = "/home/jfmcoronel/v8-root/v8/out/x64.debug/d8"
 
 def get_lib(path):
     if path.find("ChakraCore/") != -1 or path.find("chakra/") != -1:
@@ -37,7 +37,7 @@ if __name__ == "__main__":
 
                 print('Instrumenting: %s' % full_path)
                 try:
-                    subprocess.call(['ts-node', 'typer.ts', full_path, ins_path], stdout=FNULL)
+                    subprocess.call(['/home/jfmcoronel/die/fuzz/TS/node_modules/.bin/ts-node', 'typer.ts', full_path, ins_path], stdout=FNULL)
                 except:
                     print('Instrumentation failed')
                     continue

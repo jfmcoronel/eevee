@@ -20,6 +20,7 @@
 
  */
 
+#define EEVEE
 #define AFL_MAIN
 #define MESSAGES_TO_STDOUT
 
@@ -80,6 +81,188 @@
 #else
 #  define EXP_ST static
 #endif /* ^AFL_LIB */
+
+#ifdef EEVEE
+#ifndef HASHDICTC
+#define HASHDICTC
+#include <stdlib.h> /* malloc/calloc */
+#include <stdint.h> /* uint32_t */
+#include <string.h> /* memcpy/memcmp */
+
+typedef int (*enumFunc)(void *key, int count, int *value, void *user);
+
+#define HASHDICT_VALUE_TYPE int
+#define KEY_LENGTH_TYPE int
+
+struct keynode {
+	struct keynode *next;
+	char *key;
+	KEY_LENGTH_TYPE len;
+	HASHDICT_VALUE_TYPE value;
+};
+		
+struct dictionary {
+	struct keynode **table;
+	int length, count;
+	double growth_treshold;
+	double growth_factor;
+	HASHDICT_VALUE_TYPE *value;
+};
+
+/* See README.md */
+
+struct dictionary* dic_new(int initial_size);
+void dic_delete(struct dictionary* dic);
+int dic_add(struct dictionary* dic, void *key, int keyn);
+int dic_find(struct dictionary* dic, void *key, int keyn);
+void dic_forEach(struct dictionary* dic, enumFunc f, void *user);
+
+struct dictionary *dic;
+#endif
+
+#define hash_func meiyan
+
+static inline uint32_t meiyan(const char *key, int count) {
+	typedef uint32_t* P;
+	uint32_t h = 0x811c9dc5;
+	while (count >= 8) {
+		h = (h ^ ((((*(P)key) << 5) | ((*(P)key) >> 27)) ^ *(P)(key + 4))) * 0xad3e7;
+		count -= 8;
+		key += 8;
+	}
+	#define tmp h = (h ^ *(uint16_t*)key) * 0xad3e7; key += 2;
+	if (count & 4) { tmp tmp }
+	if (count & 2) { tmp }
+	if (count & 1) { h = (h ^ *key) * 0xad3e7; }
+	#undef tmp
+	return h ^ (h >> 16);
+}
+
+struct keynode *keynode_new(char*k, int l) {
+	struct keynode *node = malloc(sizeof(struct keynode));
+	node->len = l;
+	node->key = malloc(l);
+	memcpy(node->key, k, l);
+	node->next = 0;
+	node->value = -1;
+	return node;
+}
+
+void keynode_delete(struct keynode *node) {
+	free(node->key);
+	if (node->next) keynode_delete(node->next);
+	free(node);
+}
+
+struct dictionary* dic_new(int initial_size) {
+	struct dictionary* dic = malloc(sizeof(struct dictionary));
+	if (initial_size == 0) initial_size = 1024;
+	dic->length = initial_size;
+	dic->count = 0;
+	dic->table = calloc(sizeof(struct keynode*), initial_size);
+	memset(dic->table, 0, initial_size * sizeof(struct keynode *));
+	dic->growth_treshold = 2.0;
+	dic->growth_factor = 10;
+	return dic;
+}
+
+void dic_delete(struct dictionary* dic) {
+	for (int i = 0; i < dic->length; i++) {
+		if (dic->table[i])
+			keynode_delete(dic->table[i]);
+	}
+	free(dic->table);
+	dic->table = 0;
+	free(dic);
+}
+
+void dic_reinsert_when_resizing(struct dictionary* dic, struct keynode *k2) {
+	int n = hash_func(k2->key, k2->len) % dic->length;
+	if (dic->table[n] == 0) {
+		dic->table[n] = k2;
+		dic->value = &dic->table[n]->value;
+		return;
+	}
+	struct keynode *k = dic->table[n];
+	k2->next = k;
+	dic->table[n] = k2;
+	dic->value = &k2->value;
+}
+
+void dic_resize(struct dictionary* dic, int newsize) {
+	int o = dic->length;
+	struct keynode **old = dic->table;
+	dic->table = calloc(sizeof(struct keynode*), newsize);
+	dic->length = newsize;
+	for (int i = 0; i < o; i++) {
+		struct keynode *k = old[i];
+		while (k) {
+			struct keynode *next = k->next;
+			k->next = 0;
+			dic_reinsert_when_resizing(dic, k);
+			k = next;
+		}
+	}
+	free(old);
+}
+
+int dic_add(struct dictionary* dic, void *key, int keyn) {
+	int n = hash_func((const char*)key, keyn) % dic->length;
+	if (dic->table[n] == 0) {
+		double f = (double)dic->count / (double)dic->length;
+		if (f > dic->growth_treshold) {
+			dic_resize(dic, dic->length * dic->growth_factor);
+			return dic_add(dic, key, keyn);
+		}
+		dic->table[n] = keynode_new((char*)key, keyn);
+		dic->value = &dic->table[n]->value;
+		dic->count++;
+		return 0;
+	}
+	struct keynode *k = dic->table[n];
+	while (k) {
+		if (k->len == keyn && memcmp(k->key, key, keyn) == 0) {
+			dic->value = &k->value;
+			return 1;
+		}
+		k = k->next;
+	}
+	dic->count++;
+	struct keynode *k2 = keynode_new((char*)key, keyn);
+	k2->next = dic->table[n];
+	dic->table[n] = k2;
+	dic->value = &k2->value;
+	return 0;
+}
+
+int dic_find(struct dictionary* dic, void *key, int keyn) {
+	int n = hash_func((const char*)key, keyn) % dic->length;
+	__builtin_prefetch(dic->table[n]);
+	struct keynode *k = dic->table[n];
+	if (!k) return 0;
+	while (k) {
+		if (k->len == keyn && !memcmp(k->key, key, keyn)) {
+			dic->value = &k->value;
+			return 1;
+		}
+		k = k->next;
+	}
+	return 0;
+}
+
+void dic_forEach(struct dictionary* dic, enumFunc f, void *user) {
+	for (int i = 0; i < dic->length; i++) {
+		if (dic->table[i] != 0) {
+			struct keynode *k = dic->table[i];
+			while (k) {
+				if (!f(k->key, k->len, &k->value, user)) return;
+				k = k->next;
+			}
+		}
+	}
+}
+#undef hash_func
+#endif
 
 /* Lots of globals, but mostly for the status UI and other things where it
    really makes no sense to haul them around as function parameters. */
@@ -936,7 +1119,51 @@ EXP_ST void read_bitmap(u8* fname) {
    This function is called after every exec() on a fairly large buffer, so
    it needs to be fast. We do this in 32-bit and 64-bit flavors. */
 
+int hits = 0;
+int total_tries = 0;
+
 static inline u8 has_new_bits(u8* virgin_map, bool update) {
+#ifdef EEVEE
+  fprintf(stderr, "-- START --\n");
+
+  int ret = 0;
+  int fd;
+  u8* buf;
+  u8* fn = "/home/jfmcoronel/die/output-0/.eevee_dump";
+
+  fprintf(stderr, "-- PY START --\n");
+  system("/usr/bin/python3 /home/jfmcoronel/die/eevee.py");
+  fprintf(stderr, "-- PY END --\n");
+
+  buf = ck_alloc(1000); // Will leak
+  fd = open(fn, O_RDONLY);
+  read(fd, buf, 1000);
+  close(fd);
+
+  int len = strlen((char *)buf);
+  int hash = meiyan((const char*)buf, len) % dic->length;
+  printf("Hash: %d (len %d)\n", hash, len);
+  total_tries++;
+
+  if (dic_find(dic, buf, len)) {
+  	printf("Already found: [%s]!\n", buf);
+	hits++;
+  } else {
+	if (update) {
+	int insert = dic_add(dic, buf, len);
+	dic->value = 0;
+  	printf("Inserting: [%s]\n", buf);
+	} else {
+  	printf("New: [%s]\n", buf);
+	}
+	ret = 2;
+  }
+
+  printf("Size: %d/%d, %d/%d (%.6f\%) hits\n", dic->count, dic->length, hits, total_tries, (hits * 100.0) / total_tries);
+
+  fprintf(stderr, "-- END --\n");
+  return ret;
+#else
   new_bits_num = 0;
   u32 j;
 
@@ -1019,7 +1246,7 @@ static inline u8 has_new_bits(u8* virgin_map, bool update) {
   if (ret && virgin_map == virgin_bits) bitmap_changed = 1;
 
   return ret;
-
+#endif
 }
 
 /* Count the number of bits set in the provided bitmap. Used for the status
@@ -3223,6 +3450,7 @@ static void write_coverage_diff() {
 }
 
 static void globally_sync(bool crash) {
+  return;
   u8* cmdline, *fn, *cmd, *bitmap_name, *orig_bitmap;
   u8 trace_bits_tmp[MAP_SIZE];
   int fd;
@@ -4824,7 +5052,13 @@ EXP_ST u8 common_fuzz_stuff(char** argv, u8* out_buf, u32 len) {
 
   /* This handles FAULT_ERROR for us: */
 
-  queued_discovered += save_if_interesting(argv, out_buf, len, fault);
+  u8 xxx = save_if_interesting(argv, out_buf, len, fault);
+  /*if (xxx == 0) {*/
+  /*  fprintf(stderr, "\n\nNOT INTERESTING\n\n");*/
+  /*} else {*/
+  /*  fprintf(stderr, "\n\n    - INTERESTING -\n\n");*/
+  /*}*/
+  queued_discovered += xxx;
 
   if (!(stage_cur % stats_update_freq) || stage_cur + 1 == stage_max)
     show_stats();
@@ -7106,6 +7340,8 @@ static void sync_fuzzers(char** argv) {
 
         syncing_party = sd_ent->d_name;
         queued_imported += save_if_interesting(argv, mem, st.st_size, fault);
+        int zero = 0;
+        zero = 6 / zero;
         syncing_party = 0;
 
         munmap(mem, st.st_size);
@@ -8126,6 +8362,7 @@ static void save_exec_cmdline(u32 argc, char** argv, int optind) {
 /* Main entry point */
 
 int main(int argc, char** argv) {
+  dic = dic_new(0);
   setlocale(LC_ALL, "");
 
   s32 opt;
