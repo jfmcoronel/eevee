@@ -5035,7 +5035,7 @@ EXP_ST u8 common_fuzz_stuff(char** argv, u8* out_buf, u32 len) {
   u8 *fn = alloc_printf("%s/all_inputs/%06d.js", out_dir, fuzz_input_ctr);
   int fd = open(fn, O_WRONLY | O_CREAT, 0600);
   ck_free(fn);
-  FILE *fp = fopen(fn, "w");
+  FILE *fp = fdopen(fd, "w");
   if (!fp) PFATAL("fdopen() failed");
   fprintf(fp, "%s", out_buf);
   fclose(fp);
