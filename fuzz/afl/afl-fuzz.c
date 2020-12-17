@@ -1121,10 +1121,12 @@ EXP_ST void read_bitmap(u8* fname) {
 
 int hits = 0;
 int total_tries = 0;
+int fuzz_js_ctr = 0;
+int mutation_ctr = 0;
 
 static inline u8 has_new_bits(u8* virgin_map, bool update) {
 #ifdef EEVEE
-  fprintf(stderr, "-- START --\n");
+  fprintf(stderr, "-- START (round %d, mutation %d/100) --\n", fuzz_js_ctr, mutation_ctr);
 
   int ret = 0;
   int fd;
@@ -7187,6 +7189,9 @@ static s32 generate_js(u8* cur_input, u8* tmp_outdir) {
 }
 
 static u8 fuzz_js(char** argv) {
+  fuzz_js_ctr++;
+  mutation_ctr = 0;
+
   u8 *fuzz_inputs_dir, *cmdline, *cur_input;
   s32 nl_cnt, fuzz_status;
   u64 gen_time, fuzz_time;
@@ -8362,7 +8367,9 @@ static void save_exec_cmdline(u32 argc, char** argv, int optind) {
 /* Main entry point */
 
 int main(int argc, char** argv) {
+#ifdef EEVEE
   dic = dic_new(0);
+#endif
   setlocale(LC_ALL, "");
 
   s32 opt;
