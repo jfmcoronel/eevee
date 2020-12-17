@@ -4174,6 +4174,11 @@ static void maybe_delete_out_dir(void) {
   if (delete_files(fn, CASE_PREFIX)) goto dir_cleanup_failed;
   ck_free(fn);
 
+  // EEVEE: Cleanup of inputs folder
+  fn = alloc_printf("%s/inputs", out_dir);
+  if (delete_files(fn, CASE_PREFIX)) goto dir_cleanup_failed;
+  ck_free(fn);
+
   /* All right, let's do <out_dir>/crashes/id:* and <out_dir>/hangs/id:*. */
 
   if (!in_place_resume) {
