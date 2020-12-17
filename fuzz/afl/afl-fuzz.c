@@ -1123,6 +1123,7 @@ int hits = 0;
 int total_tries = 0;
 int fuzz_js_ctr = 0;
 int mutation_ctr = 0;
+int fuzz_input_ctr = 0;
 
 static inline u8 has_new_bits(u8* virgin_map, bool update) {
 #ifdef EEVEE
@@ -5028,6 +5029,18 @@ EXP_ST u8 common_fuzz_stuff(char** argv, u8* out_buf, u32 len) {
 
   write_to_testcase(out_buf, len);
 
+  // EEVEE: Save all fuzz inputs
+  fuzz_input_ctr++;
+  u8 *fn = alloc_printf("%s/inputs/%06d.js", out_dir, fuzz_input_ctr);
+  int fd = open(tmp, O_WRONLY | O_CREAT | O_EXCL, 0600);
+  if (fd < 0) PFATAL("Unable to create '%s'", tmp);
+  ck_free(fn);
+  FILE *fp = fdopen(fd, "w");
+  if (!fp) PFATAL("fdopen() failed");
+  fprintf(fp, "%s", out_buf);
+  fclose(fp);
+  close(fd);
+
   fault = run_target(argv, exec_tmout);
 
   if (stop_soon) return 1;
@@ -7813,6 +7826,12 @@ EXP_ST void setup_dirs_fds(void) {
   /* All recorded hangs. */
 
   tmp = alloc_printf("%s/hangs", out_dir);
+  if (mkdir(tmp, 0700)) PFATAL("Unable to create '%s'", tmp);
+  ck_free(tmp);
+
+  // EEVEE: All fuzz inputs
+
+  tmp = alloc_printf("%s/inputs", out_dir);
   if (mkdir(tmp, 0700)) PFATAL("Unable to create '%s'", tmp);
   ck_free(tmp);
 
