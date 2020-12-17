@@ -5031,7 +5031,7 @@ EXP_ST u8 common_fuzz_stuff(char** argv, u8* out_buf, u32 len) {
 
   // EEVEE: Save all fuzz inputs
   fuzz_input_ctr++;
-  u8 *fn = alloc_printf("%s/fuzz_inputs/%06d.js", out_dir, fuzz_input_ctr);
+  u8 *fn = alloc_printf("%s/all_inputs/%06d.js", out_dir, fuzz_input_ctr);
   int fd = open(fn, O_WRONLY | O_CREAT, 0600);
   ck_free(fn);
   FILE *fp = fopen(fn, "w");
@@ -7830,7 +7830,7 @@ EXP_ST void setup_dirs_fds(void) {
 
   // EEVEE: All fuzz inputs
 
-  tmp = alloc_printf("%s/fuzz_inputs", out_dir);
+  tmp = alloc_printf("%s/all_inputs", out_dir);
   if (mkdir(tmp, 0700) && errno != EEXIST) PFATAL("Unable to create '%s'", tmp);
   ck_free(tmp);
 
