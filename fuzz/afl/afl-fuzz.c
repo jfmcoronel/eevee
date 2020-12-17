@@ -1126,6 +1126,7 @@ int mutation_ctr = 0;
 int fuzz_input_ctr = 0;
 
 static inline u8 has_new_bits(u8* virgin_map, bool update) {
+  mutation_ctr++;
 #ifdef EEVEE
   fprintf(stderr, "-- START (round %d, mutation %d/100) --\n", fuzz_js_ctr, mutation_ctr);
 
