@@ -5037,7 +5037,6 @@ EXP_ST u8 common_fuzz_stuff(char** argv, u8* out_buf, u32 len) {
   if (!fp) PFATAL("fopen() failed");
   fprintf(fp, "%s", out_buf);
   fclose(fp);
-  close(fd);
 
   fault = run_target(argv, exec_tmout);
 
