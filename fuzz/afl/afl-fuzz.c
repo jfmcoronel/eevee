@@ -4175,7 +4175,7 @@ static void maybe_delete_out_dir(void) {
   ck_free(fn);
 
   // EEVEE: Cleanup of inputs folder
-  fn = alloc_printf("%s/inputs", out_dir);
+  fn = alloc_printf("%s/fuzz_inputs", out_dir);
   if (delete_files(fn, CASE_PREFIX)) goto dir_cleanup_failed;
   ck_free(fn);
 
@@ -5036,7 +5036,7 @@ EXP_ST u8 common_fuzz_stuff(char** argv, u8* out_buf, u32 len) {
 
   // EEVEE: Save all fuzz inputs
   fuzz_input_ctr++;
-  u8 *fn = alloc_printf("%s/inputs/%06d.js", out_dir, fuzz_input_ctr);
+  u8 *fn = alloc_printf("%s/fuzz_inputs/%06d.js", out_dir, fuzz_input_ctr);
   int fd = open(fn, O_WRONLY | O_CREAT | O_EXCL, 0600);
   if (fd < 0) PFATAL("Unable to create '%s'", fn);
   ck_free(fn);
@@ -7836,7 +7836,7 @@ EXP_ST void setup_dirs_fds(void) {
 
   // EEVEE: All fuzz inputs
 
-  tmp = alloc_printf("%s/inputs", out_dir);
+  tmp = alloc_printf("%s/fuzz_inputs", out_dir);
   if (mkdir(tmp, 0700)) PFATAL("Unable to create '%s'", tmp);
   ck_free(tmp);
 
