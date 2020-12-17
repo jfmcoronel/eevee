@@ -3512,12 +3512,12 @@ static u8 save_if_interesting(char** argv, void* mem, u32 len, u8 fault) {
       has_new_bits(virgin_bits, true);
     }
     else {
-      if (!(hnb = has_new_bits(virgin_bits, false))) {
-        if (crash_mode) total_crashes++;
-        return 0;
-      }
+      /*if (!(hnb = has_new_bits(virgin_bits, false))) {*/
+      /*  if (crash_mode) total_crashes++;*/
+      /*  return 0;*/
+      /*}*/
 
-      globally_sync(false);
+      /*globally_sync(false);*/
       if (!(hnb = has_new_bits(virgin_bits, true))) {
         return 0;
       }
@@ -3658,9 +3658,9 @@ keep_as_crash:
 #endif /* ^__x86_64__ */
 #endif
 
-        if (!has_new_bits(virgin_crash, false)) return keeping;
+        /*if (!has_new_bits(virgin_crash, false)) return keeping;*/
 
-        globally_sync(true);
+        /*globally_sync(true);*/
         if (!has_new_bits(virgin_crash, true)) return keeping;
       }
 
