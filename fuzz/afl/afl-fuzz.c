@@ -7832,7 +7832,7 @@ EXP_ST void setup_dirs_fds(void) {
   // EEVEE: All fuzz inputs
 
   tmp = alloc_printf("%s/fuzz_inputs", out_dir);
-  if (mkdir(tmp, 0700)) PFATAL("Unable to create '%s'", tmp);
+  if (mkdir(tmp, 0700) && errno != EEXIST) PFATAL("Unable to create '%s'", tmp);
   ck_free(tmp);
 
   /* Generally useful file descriptors. */
