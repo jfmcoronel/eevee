@@ -5032,11 +5032,13 @@ EXP_ST u8 common_fuzz_stuff(char** argv, u8* out_buf, u32 len) {
   // EEVEE: Save all fuzz inputs
   fuzz_input_ctr++;
   u8 *fn = alloc_printf("%s/fuzz_inputs/%06d.js", out_dir, fuzz_input_ctr);
-  FILE *fp = fopen(fn, "w");
+  int fd = open(fn, O_WRONLY | O_CREAT, 0600);
   ck_free(fn);
-  if (!fp) PFATAL("fopen() failed");
+  FILE *fp = fopen(fn, "w");
+  if (!fp) PFATAL("fdopen() failed");
   fprintf(fp, "%s", out_buf);
   fclose(fp);
+  close(fd);
 
   fault = run_target(argv, exec_tmout);
 
