@@ -7236,7 +7236,7 @@ static u8 fuzz_js(char** argv) {
   nl_cnt = fuzz_dir(fuzz_inputs_dir, argv);
   fuzz_time = get_cur_time() - fuzz_time;
 
-  if (fuzz_inputs_to_generate != 0 && total_tries >= fuzz_inputs_to_generate) {
+  if (fuzz_inputs_to_generate != 0 && fuzz_input_ctr >= fuzz_inputs_to_generate) {
     fprintf(stderr, "[NOTICE] Stopping due to %d inputs reached...\n", fuzz_inputs_to_generate);
     stop_soon = 2;
   }
