@@ -7238,8 +7238,7 @@ static u8 fuzz_js(char** argv) {
 
   if (fuzz_inputs_to_generate != 0 && total_tries >= fuzz_inputs_to_generate) {
     fprintf(stderr, "[NOTICE] Stopping due to %d inputs reached...\n", fuzz_inputs_to_generate);
-    stop_soon = 1;
-    exit_1 = 1;
+    stop_soon = 2;
   }
 
   ACTF("Time - Generation: %0.02f ea/s, Execution: %0.02f ea/s\n",
