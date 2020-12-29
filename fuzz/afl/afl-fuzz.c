@@ -7227,6 +7227,11 @@ static u8 fuzz_js(char** argv) {
   fuzz_status = generate_js(cur_input, fuzz_inputs_dir);
   gen_time = get_cur_time() - gen_time;
 
+  if (total_tries >= fuzz_inputs_to_generate) {
+    fprintf(stderr, "[NOTICE] Stopping due to %d inputs reached...\n", fuzz_inputs_to_generate);
+    stop_soon = 1;
+  }
+
   // if (fuzz_status != 0) {
   //   ACTF("Something wrong during fuzz, normally timeout.");
   //   goto out;
