@@ -20,7 +20,7 @@
 
  */
 
-#define EEVEE
+/*#define EEVEE*/
 #define AFL_MAIN
 #define MESSAGES_TO_STDOUT
 
