@@ -565,7 +565,7 @@ static u64 get_cur_time_us(void) {
 
 static inline u32 UR(u32 limit) {
 
-  if (unlikely(!rand_cnt--)) {
+  if (!has_fixed_randomization_seed && unlikely(!rand_cnt--)) {
 
     u32 seed[2];
 
@@ -1119,6 +1119,8 @@ EXP_ST void read_bitmap(u8* fname) {
    This function is called after every exec() on a fairly large buffer, so
    it needs to be fast. We do this in 32-bit and 64-bit flavors. */
 
+int has_fixed_randomization_seed = 0;
+u32 randomization_seed = 0;
 int fuzz_inputs_to_generate = 0;
 int hits = 0;
 int total_tries = 0;
@@ -8417,7 +8419,7 @@ int main(int argc, char** argv) {
   gettimeofday(&tv, &tz);
   srandom(tv.tv_sec ^ tv.tv_usec ^ getpid());
 
-  while ((opt = getopt(argc, argv, "+i:o:f:m:e:t:T:dnCB:S:M:x:Q")) > 0)
+  while ((opt = getopt(argc, argv, "+i:o:f:m:e:s:t:T:dnCB:S:M:x:Q")) > 0)
 
     switch (opt) {
       case 'i': /* input dir */
@@ -8480,6 +8482,18 @@ int main(int argc, char** argv) {
 
           if (sscanf(optarg, "%u", &fuzz_inputs_to_generate) < 1 ||
               optarg[0] == '-') FATAL("Bad syntax used for -e");
+
+          break;
+
+      }
+
+      case 's': { /* EEVEE: Custom randomization seed */
+
+          if (sscanf(optarg, "%u", &randomization_seed) < 1 ||
+              optarg[0] == '-') FATAL("Bad syntax used for -e");
+
+	  has_fixed_randomization_seed = 1;
+	  srandom(randomization_seed);
 
           break;
 
