@@ -1131,6 +1131,10 @@ int fuzz_input_ctr = 0;
 static inline u8 has_new_bits(u8* virgin_map, bool update) {
   mutation_ctr++;
   fprintf(stderr, "-- START (round %d, mutation %d/100) [%d to generate] --\n", fuzz_js_ctr, mutation_ctr, fuzz_inputs_to_generate);
+
+  if (has_fixed_randomization_seed) {
+    fprintf(stderr, "SEED: %u\n", randomization_seed);
+  }
 #ifdef EEVEE
 
   int ret = 0;
@@ -8490,7 +8494,7 @@ int main(int argc, char** argv) {
       case 's': { /* EEVEE: Custom randomization seed */
 
           if (sscanf(optarg, "%u", &randomization_seed) < 1 ||
-              optarg[0] == '-') FATAL("Bad syntax used for -e");
+              optarg[0] == '-') FATAL("Bad syntax used for -s");
 
 	  has_fixed_randomization_seed = 1;
 	  srandom(randomization_seed);
