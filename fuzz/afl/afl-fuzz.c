@@ -1119,6 +1119,7 @@ EXP_ST void read_bitmap(u8* fname) {
    This function is called after every exec() on a fairly large buffer, so
    it needs to be fast. We do this in 32-bit and 64-bit flavors. */
 
+int fuzz_inputs_to_generate = 0;
 int hits = 0;
 int total_tries = 0;
 int fuzz_js_ctr = 0;
@@ -1127,7 +1128,7 @@ int fuzz_input_ctr = 0;
 
 static inline u8 has_new_bits(u8* virgin_map, bool update) {
   mutation_ctr++;
-  fprintf(stderr, "-- START (round %d, mutation %d/100) --\n", fuzz_js_ctr, mutation_ctr);
+  fprintf(stderr, "-- START (round %d, mutation %d/100) [%d to generate] --\n", fuzz_js_ctr, mutation_ctr, fuzz_inputs_to_generate);
 #ifdef EEVEE
 
   int ret = 0;
@@ -8469,6 +8470,15 @@ int main(int argc, char** argv) {
         if (extras_dir) FATAL("Multiple -x options not supported");
         extras_dir = optarg;
         break;
+
+      case 'e': { /* EEVEE: Number of fuzz inputs to generate (0 for normal) */
+
+          if (sscanf(optarg, "%u", &fuzz_inputs_to_generate) < 1 ||
+              optarg[0] == '-') FATAL("Bad syntax used for -e");
+
+          break;
+
+      }
 
       case 't': { /* timeout */
 
