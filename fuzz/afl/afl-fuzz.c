@@ -82,6 +82,8 @@
 #  define EXP_ST static
 #endif /* ^AFL_LIB */
 
+int has_fixed_randomization_seed = 0;
+u32 randomization_seed = 0;
 #ifdef EEVEE
 #ifndef HASHDICTC
 #define HASHDICTC
@@ -1119,8 +1121,6 @@ EXP_ST void read_bitmap(u8* fname) {
    This function is called after every exec() on a fairly large buffer, so
    it needs to be fast. We do this in 32-bit and 64-bit flavors. */
 
-int has_fixed_randomization_seed = 0;
-u32 randomization_seed = 0;
 int fuzz_inputs_to_generate = 0;
 int hits = 0;
 int total_tries = 0;
