@@ -5025,8 +5025,6 @@ abort_trimming:
    a helper function for fuzz_one(). */
 
 EXP_ST u8 common_fuzz_stuff(char** argv, u8* out_buf, u32 len) {
-  fprintf(stderr, "common_fuzz_stuff start\n");
-
   u8 fault;
 
   if (post_handler) {
@@ -7161,7 +7159,6 @@ static s32 fuzz_dir(char* input_dir, char** argv) {
 
     start_us = get_cur_time_us();
     //write_to_testcase(mem, len);
-    fprintf(stderr, "fuzz_dir calls common_fuzz_stuff\n");
     common_fuzz_stuff(argv, mem, len);
     stop_us = get_cur_time_us();
     exec_us = stop_us - start_us;
