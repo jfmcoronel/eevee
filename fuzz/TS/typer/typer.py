@@ -4,7 +4,7 @@ import resolve
 # I prefer to use d8 to run the instrumented code, 
 # which should be fastest I believe.
 
-d8_path = "/home/jfmcoronel/v8-root/v8/out/x64.debug/d8"
+d8_path = "/home/jfmcoronel/v8-root/v8/out/x64.release/d8"
 
 def get_lib(path):
     if path.find("ChakraCore/") != -1 or path.find("chakra/") != -1:
