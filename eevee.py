@@ -25,8 +25,9 @@ def emit_key():
         key_parts.append(f"{key}{ctr[key]}")
 
     final_key = "".join(key_parts) + "\0"
-    print(final_key)
 
+    with open(OUTPUT_FILEPATH, "w") as f:
+        f.write(final_key)
 
 os.system(V8_CMD)
 emit_key()
