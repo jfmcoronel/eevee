@@ -21,7 +21,7 @@ def emit_key():
 
     key_parts = []
     for key in ctr:
-        key = key.replace("Phase ", "").replace(" changed the IR.", "").replace(" ", "")
+        key = key.strip().rsplit(' ', maxsplit=1)[-1].strip()
         key_parts.append(f"{key}{ctr[key]}")
 
     final_key = "".join(key_parts) + "\0"
