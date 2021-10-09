@@ -3,9 +3,10 @@ from collections import Counter
 
 JIT_COMPILER_ENV = ""
 JIT_COMPILER_BIN_PATH = "timeout 10 /home/jfmcoronel/ch"
+JIT_COMPILER_FLAGS = "-bgjit- -dump:backend"
 CURRENT_FUZZ_INPUT_PATH = "/home/jfmcoronel/die/output-0/.cur_input"
 JIT_COMPILER_FEEDBACK_FILEPATH = "/home/jfmcoronel/die/output-0/.eevee_dump"
-JIT_COMPILER_FEEDBACK_CMD = f"{JIT_COMPILER_ENV} {JIT_COMPILER_BIN_PATH} {CURRENT_FUZZ_INPUT_PATH} 2>&1 > {JIT_COMPILER_FEEDBACK_FILEPATH}"
+JIT_COMPILER_FEEDBACK_CMD = f"{JIT_COMPILER_ENV} {JIT_COMPILER_BIN_PATH} {JIT_COMPILER_FLAGS} {CURRENT_FUZZ_INPUT_PATH} > {JIT_COMPILER_FEEDBACK_FILEPATH}"
 
 FEEDBACK_PATH = "/Users/jfmcoronel/Desktop/dcs/cs300/logs/chakra/backend.txt.3"
 IGNORE_PHASES = ('Emitter', 'BackEnd')
