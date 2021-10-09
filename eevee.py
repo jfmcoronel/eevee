@@ -6,7 +6,7 @@ V8_BIN_PATH = "timeout 10 /home/jfmcoronel/die/engines/v8/v8/out/x64.release/d8 
 CURRENT_INPUT_PATH = "/home/jfmcoronel/die/output-0/.cur_input"
 OUTPUT_FILEPATH = "/home/jfmcoronel/die/output-0/.eevee_dump"
 
-V8_CMD = f"{V8_ENV} {V8_BIN_PATH} {CURRENT_INPUT_PATH} 2> {OUTPUT_FILEPATH}"
+V8_CMD = f"{V8_ENV} {V8_BIN_PATH} {CURRENT_INPUT_PATH} 2>&1 > {OUTPUT_FILEPATH}"
 
 
 def emit_key():
