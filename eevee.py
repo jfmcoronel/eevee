@@ -1,33 +1,67 @@
 import os
 from collections import Counter
 
-V8_ENV = ""
-V8_BIN_PATH = "timeout 10 /home/jfmcoronel/die/engines/v8/v8/out/x64.release/d8 --trace-turbo-reduction"
-CURRENT_INPUT_PATH = "/home/jfmcoronel/die/output-0/.cur_input"
-OUTPUT_FILEPATH = "/home/jfmcoronel/die/output-0/.eevee_dump"
+JIT_COMPILER_ENV = ""
+JIT_COMPILER_BIN_PATH = "timeout 10 ?"
+CURRENT_FUZZ_INPUT_PATH = "/home/jfmcoronel/die/output-0/.cur_input"
+JIT_COMPILER_FEEDBACK_FILEPATH = "/home/jfmcoronel/die/output-0/.eevee_dump"
+JIT_COMPILER_FEEDBACK_CMD = f"{JIT_COMPILER_ENV} {JIT_COMPILER_BIN_PATH} {CURRENT_FUZZ_INPUT_PATH} 2>&1 > {JIT_COMPILER_FEEDBACK_FILEPATH}"
 
-V8_CMD = f"{V8_ENV} {V8_BIN_PATH} {CURRENT_INPUT_PATH} 2> {OUTPUT_FILEPATH}"
+FEEDBACK_PATH = "/Users/jfmcoronel/Desktop/dcs/cs300/logs/chakra/backend.txt.3"
+IGNORE_PHASES = ('Emitter', 'BackEnd')
 
 
 def emit_key():
-    ctr = Counter()
-
-    with open(OUTPUT_FILEPATH, "r") as f:
+    with open(JIT_COMPILER_FEEDBACK_FILEPATH, 'r') as f:
         lines = f.readlines()
 
+    a = None
+    a_count = None
+    b = None
+    b_count = None
+    
+    ctr = Counter()
+
     for line in lines:
-        reducer = line.rsplit(' ', maxsplit=1)[-1].strip()
-        ctr[reducer] += 1
+        if 'IR after' in line:
+            _, right = line.split('IR after', maxsplit=1)
+            phase, _ = right.strip().split(' ', maxsplit=1)
 
-    key_parts = []
-    for key in ctr:
-        key = key.strip().rsplit(' ', maxsplit=1)[-1].strip()
-        key_parts.append(f"{key}{ctr[key]}")
+            if a is None:
+                a = phase
+            elif phase == 'BackEnd':
+                a = None
+                a_count = None
+                b = None
+                b_count = None
+            else:
+                a = b
+                a_count = b_count
+                b = phase
+                b_count = None
 
-    final_key = "".join(key_parts) + "\0"
+        elif 'Instr Count:' in line:
+            if a in IGNORE_PHASES or b in IGNORE_PHASES:
+                continue
 
-    with open(OUTPUT_FILEPATH, "w") as f:
-        f.write(final_key)
+            _, right = line.split('Instr Count:')
+            # if 'Size:' in right:
+            #     # 2nd count of Emitter
+            #     continue
 
-os.system(V8_CMD)
+            count = right.strip()
+
+            if a and not b:
+                a_count = count
+            elif a and b:
+                b_count = count
+                if a_count != b_count:
+                    ctr[b] += 1
+
+    key = ''.join(f"{phase}{ctr[phase]}" for phase in ctr) + '\0'
+
+    with open(JIT_COMPILER_FEEDBACK_FILEPATH, "w") as f:
+        f.write(key)
+
+os.system(JIT_COMPILER_FEEDBACK_CMD)
 emit_key()
