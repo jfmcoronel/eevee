@@ -1,18 +1,18 @@
 import os
 from collections import Counter
 
-V8_ENV = ""
-V8_BIN_PATH = "timeout 10 /home/jfmcoronel/die/engines/v8/v8/out/x64.release/d8 --trace-turbo-reduction"
-CURRENT_INPUT_PATH = "/home/jfmcoronel/die/output-0/.cur_input"
-OUTPUT_FILEPATH = "/home/jfmcoronel/die/output-0/.eevee_dump"
-
-V8_CMD = f"{V8_ENV} {V8_BIN_PATH} {CURRENT_INPUT_PATH} 2>&1 > {OUTPUT_FILEPATH}"
+JIT_COMPILER_ENV = ""
+JIT_COMPILER_BIN_PATH = "timeout 10 /home/jfmcoronel/d8 "
+JIT_COMPILER_FLAGS = "--trace-turbo-reduction"
+CURRENT_FUZZ_INPUT_PATH = "/home/jfmcoronel/die/output-0/.cur_input"
+JIT_COMPILER_FEEDBACK_FILEPATH = "/home/jfmcoronel/die/output-0/.eevee_dump"
+JIT_COMPILER_FEEDBACK_CMD = f"{JIT_COMPILER_ENV} {JIT_COMPILER_BIN_PATH} {JIT_COMPILER_FLAGS} {CURRENT_FUZZ_INPUT_PATH} 2>&1 {JIT_COMPILER_FEEDBACK_FILEPATH}"
 
 
 def emit_key():
     ctr = Counter()
 
-    with open(OUTPUT_FILEPATH, "r") as f:
+    with open(JIT_COMPILER_FEEDBACK_FILEPATH, "r") as f:
         lines = f.readlines()
 
     for line in lines:
@@ -26,8 +26,8 @@ def emit_key():
 
     final_key = "".join(key_parts) + "\0"
 
-    with open(OUTPUT_FILEPATH, "w") as f:
+    with open(JIT_COMPILER_FEEDBACK_FILEPATH, "w") as f:
         f.write(final_key)
 
-os.system(V8_CMD)
+os.system(JIT_COMPILER_FEEDBACK_CMD)
 emit_key()
