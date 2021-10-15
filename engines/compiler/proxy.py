@@ -94,7 +94,7 @@ def rewrite(cmdline):
                 continue
             new_cmdline.append(arg)
 
-    // [jfmcoronel] lcov hack
+    # [jfmcoronel] lcov hack
     new_cmdline.append("--coverage")
     print(new_cmdline)
 
