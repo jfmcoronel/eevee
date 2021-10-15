@@ -93,6 +93,9 @@ def rewrite(cmdline):
             if "--no-call-graph-profile-sort" in arg:
                 continue
             new_cmdline.append(arg)
+
+    // [jfmcoronel] lcov hack
+    new_cmdline.append("--coverage")
     print(new_cmdline)
 
 
