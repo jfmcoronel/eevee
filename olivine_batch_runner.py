@@ -114,10 +114,10 @@ def main():
         populate(fuzz_target_path, jit_compiler_code, until_n_inputs, seed)
 
     elif cmd == 'fuzz':
-        jit_compiler_code, seed, until_n_inputs = sys.argv[2:]
+        jit_compiler_code, until_n_inputs, seed = sys.argv[2:]
 
-        seed = int(seed)
         until_n_inputs = int(until_n_inputs)
+        seed = int(seed)
 
         fuzz(jit_compiler_code, until_n_inputs, seed)
 
