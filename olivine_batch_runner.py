@@ -1,6 +1,7 @@
 import multiprocessing
 import os
 import sys
+import time
 
 # Usage:
 # python3 olivine_batch_runner.py start {jitCompilerCode} {seed} {untilNInputs}
@@ -42,6 +43,12 @@ def start(jit_compiler_code: str, seed: int, until_n_inputs: int):
     os.system(cmd)
 
     # Must wait for all slaves to finish
+    while True:
+        time.sleep(60)
+        output = os.popen('tmux ls')
+
+        if 'populate' not in output:
+            break
 
     cmd = f'tmux new-session -s fuzz -d "~/die/olivine_batch_runner.py fuzz {jit_compiler_code} {seed} {until_n_inputs}"'
     os.system(cmd)
