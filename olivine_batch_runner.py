@@ -74,6 +74,7 @@ def fuzz(fuzz_target_path: str, jit_compiler_code: str, seed: int, until_n_input
     lib_string = get_lib_string(jit_compiler_code)
     cmd: list[str] = []
 
+    cmd.append(f'cd ~/die && rm -rf ~/die/corpus/ && python3 ./fuzz/scripts/make_initial_corpus.py ./DIE-corpus ./corpus')
     cmd.append(f'cd ~/die')
     cmd.append(f'{{ time ./fuzz/afl/afl-fuzz -s {seed} -e {until_n_inputs} -m none -o output "{fuzz_target_path}" {lib_string} @@ ; }} 2> >(tee ~/die/output/time-fuzz.txt >&2)')
     cmd.append(f'cd ~/die')
