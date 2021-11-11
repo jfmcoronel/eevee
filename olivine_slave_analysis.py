@@ -1,29 +1,35 @@
 from dataclasses import dataclass
+import glob
+import os
 import sys
 
 
 # Usage:
-# python3 olivine_slave_analysis.py <n> <jit_compiler_code>
+# python3 olivine_slave_analysis.py optset <n> <jit_compiler_code>
+# python3 olivine_slave_analysis.py coverage <n> <jit_compiler_code>
 
 TIMEOUT = 10
 
 
 @dataclass(frozen=True, slots=True)
 class MetricsInfo:
+    fuzz_target_path: str
     cov_target_path: str
-    opt_set_flags: str
+    optset_flags: str
     cov_source_code_path: str
 
 
 v8_metrics_info = MetricsInfo(
+    fuzz_target_path='/home/jfmcoronel/d8',
     cov_target_path='/home/jfmcoronel/die/engines/v8/v8/out/Debug/d8',
-    opt_set_flags='--trace-turbo-reduction',
+    optset_flags='--trace-turbo-reduction',
     cov_source_code_path='/home/jfmcoronel/die/engines/v8/v8/out/Debug/',
 )
 
 ch_metrics_info = MetricsInfo(
+    fuzz_target_path='/home/jfmcoronel/ch',
     cov_target_path='/home/jfmcoronel/ch-cov-src/out/Debug/ch',
-    opt_set_flags='-bgjit- -dump:backend',
+    optset_flags='-bgjit- -dump:backend',
     cov_source_code_path='/home/jfmcoronel/ch-cov-src/out/Debug/',
 )
 
@@ -37,59 +43,75 @@ def get_metrics_info(jit_compiler_code: str) -> MetricsInfo:
     return metrics_info_mapping[jit_compiler_code]
 
 
-# # Optset commands
-#     [ "rm -rf ~/die/output-0/@optset"
-#       "mkdir ~/die/output-0/@optset"
-#       "cd ~/die/output-0/@optset"
-#       "~/optset_runner.sh" ]
+def execute(cmd: str):
+    print(cmd)
+    os.system(cmd)
 
-#     let optSetDumpBashFilename =
-#         "/home/jfmcoronel/die/output-0/@optset/\`basename -s .js \$p\`.txt"
 
-#     let optSetDumpCmd =
-#         $">{optSetDumpBashFilename} 2>&1; echo \$? >> {optSetDumpBashFilename}"
+def get_optset_cmd(metrics_info: MetricsInfo):
+    ...
 
-#     let actualCmd =
-#         $"timeout {timeoutSeconds} {pathToFuzzTarget} {optSetFlags} \$p {optSetDumpCmd}"
 
-#     $"""cat << EOF > ~/optset_runner.sh
-# #!/bin/bash
-# for p in ~/die/output-0/all_inputs/*.js; do
-#     echo "{actualCmd}" ;
-#     {actualCmd} ;
-# done
-# EOF
-# chmod +x ~/optset_runner.sh"""
+def generate_optsets(n: int, metrics_info: MetricsInfo):
+    output_basepath = f'~/die/output-{n}/@optset'
+    fuzz_input_basepath = f'/home/jfmcoronel/die/output-{n}/all_inputs/*.js'
 
-def analyze():
-    pass
+    cmd: list[str] = [
+        f'rm -rf {output_basepath}',
+        f'mkdir {output_basepath}',
+        f'cd {output_basepath}',
+    ]
+    execute(' ; '.join(cmd))
+
+    for full_js_path in glob.glob(fuzz_input_basepath):
+        js_name_ext = os.path.basename(full_js_path)
+        js_basename = os.path.splitext(js_name_ext)[0]
+        optset_output_path = os.path.join(output_basepath, f'{js_basename}.txt')
+
+        dump_suffix = f'>{optset_output_path} 2>&1; echo $? >> {optset_output_path}'
+        actual_cmd = f'timeout {TIMEOUT} {metrics_info.fuzz_target_path} {metrics_info.optset_flags} {full_js_path} {dump_suffix}'
+
+        execute(actual_cmd)
+
+
+def generate_coverage(n: int, metrics_info: MetricsInfo):
+    output_basepath = f'~/die/output-{n}/@coverage'
+    fuzz_input_basepath = f'/home/jfmcoronel/die/output-{n}/all_inputs/*.js'
+
+    cmd_before: list[str] = [
+        f'rm -rf {output_basepath}',
+        f'mkdir {output_basepath}',
+        f'cd {output_basepath}',
+    ]
+    execute(' ; '.join(cmd_before))
+
+    for full_js_path in glob.glob(fuzz_input_basepath):
+        actual_cmd = f'timeout {TIMEOUT} {metrics_info.fuzz_target_path} {full_js_path}'
+        execute(actual_cmd)
+
+    lcovinfo_path = os.path.join(output_basepath, '.lcovinfo')
+
+    cmd_after: list[str] = [
+        f'cd {metrics_info.cov_source_code_path}',
+        f'/usr/bin/lcov --capture --no-checksum --directory {metrics_info.cov_source_code_path} --output-file {lcovinfo_path} --gcov-tool ~/gcov_for_clang.sh',
+        f'genhtml {lcovinfo_path} --output-directory {output_basepath} --ignore-errors=source',
+    ]
+    execute(' ; '.join(cmd_after))
 
 
 def main():
-    n, jit_compiler_code = sys.argv
+    cmd, n, jit_compiler_code = sys.argv
     n = int(n)
-
     metrics_info = get_metrics_info(jit_compiler_code)
+
+    if cmd == 'optset':
+        generate_optsets(n, metrics_info)
+    elif cmd == 'coverage':
+        generate_coverage(n, metrics_info)
+        pass
+    else:
+        assert False, f'Invalid arguments: {sys.argv}'
 
 
 if __name__ == '__main__':
     main()
-
-
-# # Coverage commands
-#     [ "rm -rf ~/die/output-0/@coverage"
-#       "mkdir ~/die/output-0/@coverage"
-#       "cd ~/die/output-0/@coverage"
-#       "~/cov_runner.sh"
-#       $"cd {coverageBasePath}"
-#       $"/usr/bin/lcov --capture --no-checksum --directory {coverageBasePath} --output-file ~/die/output-0/@coverage/.lcovinfo --gcov-tool ~/gcov_for_clang.sh"
-#       "genhtml ~/die/output-0/@coverage/.lcovinfo --output-directory ~/die/output-0/@coverage/ --ignore-errors=source" ]
-
-#     $"""cat << EOF > ~/cov_runner.sh
-# #!/bin/bash
-# for p in ~/die/output-0/all_inputs/*.js; do
-#     echo {pathToCovTarget} \$p;
-#     timeout {timeoutSeconds} {pathToCovTarget} \$p;
-# done
-# EOF
-# chmod +x ~/cov_runner.sh"""
