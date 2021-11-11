@@ -10,6 +10,10 @@ import time
 
 # TODO: Timing
 
+def execute(cmd: str):
+    print(cmd)
+    os.system(cmd)
+
 def get_lib_string(jit_compiler_code: str):
     die_corpus_path = '/home/jfmcoronel/die/DIE-corpus/'
 
@@ -36,24 +40,24 @@ def run_slaves(cmd: str, prefix: str):
     for n in range(slave_count):
         new_cmd = cmd.replace('output', f'output-{n}')
         print(new_cmd)
-        os.system(f'tmux new-window -n {prefix}-slave-{n} "AFL_NO_UI=1 {new_cmd}; /bin/bash"')
+        execute(f'tmux new-window -n {prefix}-slave-{n} "AFL_NO_UI=1 {new_cmd}; /bin/bash"')
 
 
 def start(jit_compiler_code: str, seed: int, until_n_inputs: int):
     cmd = f'tmux new-session -s populate -d "~/die/olivine_batch_runner.py populate {jit_compiler_code} {seed} {until_n_inputs}"'
-    os.system(cmd)
+    execute(cmd)
 
     # Must wait for all slaves to finish
     while True:
         time.sleep(60)
-        output = os.popen('tmux ls')
+        output = os.popen('tmux ls').read()
         print(output)
 
         if 'populate' not in output:
             break
 
     cmd = f'tmux new-session -s fuzz -d "~/die/olivine_batch_runner.py fuzz {jit_compiler_code} {seed} {until_n_inputs}"'
-    os.system(cmd)
+    execute(cmd)
 
 
 def populate(fuzz_target_path: str, jit_compiler_code: str, seed: int, until_n_inputs: int):
