@@ -20,7 +20,13 @@
 
  */
 
-#undef EEVEE
+#define IS_OLIVINE
+#define OLIVINE_COMMON
+
+#ifdef IS_OLIVINE
+/*#define OLIVINE_FLAVOR_SOLO*/
+#endif
+
 #define AFL_MAIN
 #define MESSAGES_TO_STDOUT
 
@@ -82,188 +88,18 @@
 #  define EXP_ST static
 #endif /* ^AFL_LIB */
 
+// Fixing randomization seed
+#ifdef OLIVINE_COMMON
 int has_fixed_randomization_seed = 0;
 u32 randomization_seed = 0;
-#ifdef EEVEE
-#ifndef HASHDICTC
-#define HASHDICTC
-#include <stdlib.h> /* malloc/calloc */
-#include <stdint.h> /* uint32_t */
-#include <string.h> /* memcpy/memcmp */
-
-typedef int (*enumFunc)(void *key, int count, int *value, void *user);
-
-#define HASHDICT_VALUE_TYPE int
-#define KEY_LENGTH_TYPE int
-
-struct keynode {
-	struct keynode *next;
-	char *key;
-	KEY_LENGTH_TYPE len;
-	HASHDICT_VALUE_TYPE value;
-};
-		
-struct dictionary {
-	struct keynode **table;
-	int length, count;
-	double growth_treshold;
-	double growth_factor;
-	HASHDICT_VALUE_TYPE *value;
-};
-
-/* See README.md */
-
-struct dictionary* dic_new(int initial_size);
-void dic_delete(struct dictionary* dic);
-int dic_add(struct dictionary* dic, void *key, int keyn);
-int dic_find(struct dictionary* dic, void *key, int keyn);
-void dic_forEach(struct dictionary* dic, enumFunc f, void *user);
-
-struct dictionary *dic;
 #endif
 
-#define hash_func meiyan
-
-static inline uint32_t meiyan(const char *key, int count) {
-	typedef uint32_t* P;
-	uint32_t h = 0x811c9dc5;
-	while (count >= 8) {
-		h = (h ^ ((((*(P)key) << 5) | ((*(P)key) >> 27)) ^ *(P)(key + 4))) * 0xad3e7;
-		count -= 8;
-		key += 8;
-	}
-	#define tmp h = (h ^ *(uint16_t*)key) * 0xad3e7; key += 2;
-	if (count & 4) { tmp tmp }
-	if (count & 2) { tmp }
-	if (count & 1) { h = (h ^ *key) * 0xad3e7; }
-	#undef tmp
-	return h ^ (h >> 16);
-}
-
-struct keynode *keynode_new(char*k, int l) {
-	struct keynode *node = malloc(sizeof(struct keynode));
-	node->len = l;
-	node->key = malloc(l);
-	memcpy(node->key, k, l);
-	node->next = 0;
-	node->value = -1;
-	return node;
-}
-
-void keynode_delete(struct keynode *node) {
-	free(node->key);
-	if (node->next) keynode_delete(node->next);
-	free(node);
-}
-
-struct dictionary* dic_new(int initial_size) {
-	struct dictionary* dic = malloc(sizeof(struct dictionary));
-	if (initial_size == 0) initial_size = 1024;
-	dic->length = initial_size;
-	dic->count = 0;
-	dic->table = calloc(sizeof(struct keynode*), initial_size);
-	memset(dic->table, 0, initial_size * sizeof(struct keynode *));
-	dic->growth_treshold = 2.0;
-	dic->growth_factor = 10;
-	return dic;
-}
-
-void dic_delete(struct dictionary* dic) {
-	for (int i = 0; i < dic->length; i++) {
-		if (dic->table[i])
-			keynode_delete(dic->table[i]);
-	}
-	free(dic->table);
-	dic->table = 0;
-	free(dic);
-}
-
-void dic_reinsert_when_resizing(struct dictionary* dic, struct keynode *k2) {
-	int n = hash_func(k2->key, k2->len) % dic->length;
-	if (dic->table[n] == 0) {
-		dic->table[n] = k2;
-		dic->value = &dic->table[n]->value;
-		return;
-	}
-	struct keynode *k = dic->table[n];
-	k2->next = k;
-	dic->table[n] = k2;
-	dic->value = &k2->value;
-}
-
-void dic_resize(struct dictionary* dic, int newsize) {
-	int o = dic->length;
-	struct keynode **old = dic->table;
-	dic->table = calloc(sizeof(struct keynode*), newsize);
-	dic->length = newsize;
-	for (int i = 0; i < o; i++) {
-		struct keynode *k = old[i];
-		while (k) {
-			struct keynode *next = k->next;
-			k->next = 0;
-			dic_reinsert_when_resizing(dic, k);
-			k = next;
-		}
-	}
-	free(old);
-}
-
-int dic_add(struct dictionary* dic, void *key, int keyn) {
-	int n = hash_func((const char*)key, keyn) % dic->length;
-	if (dic->table[n] == 0) {
-		double f = (double)dic->count / (double)dic->length;
-		if (f > dic->growth_treshold) {
-			dic_resize(dic, dic->length * dic->growth_factor);
-			return dic_add(dic, key, keyn);
-		}
-		dic->table[n] = keynode_new((char*)key, keyn);
-		dic->value = &dic->table[n]->value;
-		dic->count++;
-		return 0;
-	}
-	struct keynode *k = dic->table[n];
-	while (k) {
-		if (k->len == keyn && memcmp(k->key, key, keyn) == 0) {
-			dic->value = &k->value;
-			return 1;
-		}
-		k = k->next;
-	}
-	dic->count++;
-	struct keynode *k2 = keynode_new((char*)key, keyn);
-	k2->next = dic->table[n];
-	dic->table[n] = k2;
-	dic->value = &k2->value;
-	return 0;
-}
-
-int dic_find(struct dictionary* dic, void *key, int keyn) {
-	int n = hash_func((const char*)key, keyn) % dic->length;
-	__builtin_prefetch(dic->table[n]);
-	struct keynode *k = dic->table[n];
-	if (!k) return 0;
-	while (k) {
-		if (k->len == keyn && !memcmp(k->key, key, keyn)) {
-			dic->value = &k->value;
-			return 1;
-		}
-		k = k->next;
-	}
-	return 0;
-}
-
-void dic_forEach(struct dictionary* dic, enumFunc f, void *user) {
-	for (int i = 0; i < dic->length; i++) {
-		if (dic->table[i] != 0) {
-			struct keynode *k = dic->table[i];
-			while (k) {
-				if (!f(k->key, k->len, &k->value, user)) return;
-				k = k->next;
-			}
-		}
-	}
-}
-#undef hash_func
+#ifdef IS_OLIVINE
+#define OLIVINE_JIT_COMPILER_NONE 0
+#define OLIVINE_JIT_COMPILER_JSC 1
+#define OLIVINE_JIT_COMPILER_V8 2
+#define OLIVINE_JIT_COMPILER_CH 3
+int jit_compiler_type = OLIVINE_JIT_COMPILER_NONE;
 #endif
 
 /* Lots of globals, but mostly for the status UI and other things where it
@@ -1129,44 +965,48 @@ int mutation_ctr = 0;
 int fuzz_input_ctr = 0;
 
 static inline u8 has_new_bits(u8* virgin_map, bool update) {
+// stdout logging
+#ifdef OLIVINE_COMMON
   mutation_ctr++;
   fprintf(stderr, "-- START (round %d, mutation %d/100) [%d to generate] --\n", fuzz_js_ctr, mutation_ctr, fuzz_inputs_to_generate);
-#ifdef EEVEE
 
   int ret = 0;
-  int fd;
-  u8* buf;
-  u8* fn = "/home/jfmcoronel/die/output-0/.eevee_dump";
 
   fprintf(stderr, "-- PY START --\n");
-  system("/usr/bin/python3 /home/jfmcoronel/die/eevee.py");
+
+	u8* fn = alloc_printf("%s/.olivine_dump", out_dir);
+	u8* cmdline = alloc_printf("python3 /home/jfmcoronel/die/olivine.py %d \"%s\"", jit_compiler_type, fn);
+	execute_sh(cmdline);
+
   fprintf(stderr, "-- PY END --\n");
 
-  buf = ck_alloc(1000); // Will leak
+  int fd;
+  u64 count;
   fd = open(fn, O_RDONLY);
-  read(fd, buf, 1000);
+  read(fd, &count, 8);
   close(fd);
 
-  int len = strlen((char *)buf);
-  int hash = meiyan((const char*)buf, len) % dic->length;
-  printf("Hash: %d (len %d)\n", hash, len);
-  total_tries++;
-
-  if (dic_find(dic, buf, len)) {
-  	printf("Already found: [%s]!\n", buf);
-	hits++;
+  if (count == 1) {
+      if (update) {
+          fprintf(stderr, "-- COUNT: 1 (discovered new)--\n");
+          return 0;
+      } else {
+          fprintf(stderr, "-- COUNT: 1 (discovered new; update is false)--\n");
+          return 2;
+      }
   } else {
-	if (update) {
-	int insert = dic_add(dic, buf, len);
-	dic->value = 0;
-  	printf("Inserting: [%s]\n", buf);
-	} else {
-  	printf("New: [%s]\n", buf);
-	}
-	ret = 2;
+      fprintf(stderr, "-- COUNT: %llu (already seen)--\n", count);
+      return 2;
   }
 
-  printf("Size: %d/%d, %d/%d (%.6f\%) hits\n", dic->count, dic->length, hits, total_tries, (hits * 100.0) / total_tries);
+	// If already found:
+	//   Return 0 (do not save)
+	// Else:
+	//   If update:
+	//     Add to dict ("Inserting...")
+	//     Return 0 (do not save; saved earlier)
+	//   Else:
+	//     Return 2 (save) ("New...")
 
   fprintf(stderr, "-- END --\n");
   return ret;
@@ -3457,7 +3297,6 @@ static void write_coverage_diff() {
 }
 
 static void globally_sync(bool crash) {
-  return;
   u8* cmdline, *fn, *cmd, *bitmap_name, *orig_bitmap;
   u8 trace_bits_tmp[MAP_SIZE];
   int fd;
@@ -3519,12 +3358,12 @@ static u8 save_if_interesting(char** argv, void* mem, u32 len, u8 fault) {
       has_new_bits(virgin_bits, true);
     }
     else {
-      /*if (!(hnb = has_new_bits(virgin_bits, false))) {*/
-      /*  if (crash_mode) total_crashes++;*/
-      /*  return 0;*/
-      /*}*/
+			if (!(hnb = has_new_bits(virgin_bits, false))) {
+				if (crash_mode) total_crashes++;
+				return 0;
+			}
 
-      /*globally_sync(false);*/
+			globally_sync(false);
       if (!(hnb = has_new_bits(virgin_bits, true))) {
         return 0;
       }
@@ -3665,9 +3504,9 @@ keep_as_crash:
 #endif /* ^__x86_64__ */
 #endif
 
-        /*if (!has_new_bits(virgin_crash, false)) return keeping;*/
+				if (!has_new_bits(virgin_crash, false)) return keeping;
 
-        /*globally_sync(true);*/
+				globally_sync(true);
         if (!has_new_bits(virgin_crash, true)) return keeping;
       }
 
@@ -5034,7 +4873,8 @@ EXP_ST u8 common_fuzz_stuff(char** argv, u8* out_buf, u32 len) {
 
   write_to_testcase(out_buf, len);
 
-  // EEVEE: Save all fuzz inputs
+// Save all fuzz inputs
+#ifdef OLIVINE_COMMON
   fuzz_input_ctr++;
   u8 *fn = alloc_printf("%s/all_inputs/%06d.js", out_dir, fuzz_input_ctr);
   int fd = open(fn, O_WRONLY | O_CREAT, 0600);
@@ -5044,6 +4884,7 @@ EXP_ST u8 common_fuzz_stuff(char** argv, u8* out_buf, u32 len) {
   fprintf(fp, "%s", out_buf);
   fclose(fp);
   close(fd);
+#endif
 
   fault = run_target(argv, exec_tmout);
 
@@ -7839,11 +7680,12 @@ EXP_ST void setup_dirs_fds(void) {
   if (mkdir(tmp, 0700)) PFATAL("Unable to create '%s'", tmp);
   ck_free(tmp);
 
-  // EEVEE: All fuzz inputs
-
+// All fuzz inputs
+#ifdef OLIVINE_COMMON
   tmp = alloc_printf("%s/all_inputs", out_dir);
   if (mkdir(tmp, 0700) && errno != EEXIST) PFATAL("Unable to create '%s'", tmp);
   ck_free(tmp);
+#endif
 
   /* Generally useful file descriptors. */
 
@@ -8396,9 +8238,6 @@ static void save_exec_cmdline(u32 argc, char** argv, int optind) {
 /* Main entry point */
 
 int main(int argc, char** argv) {
-#ifdef EEVEE
-  dic = dic_new(0);
-#endif
   setlocale(LC_ALL, "");
 
   s32 opt;
@@ -8419,7 +8258,15 @@ int main(int argc, char** argv) {
   gettimeofday(&tv, &tz);
   srandom(tv.tv_sec ^ tv.tv_usec ^ getpid());
 
+#ifdef OLIVINE_COMMON
+#ifdef IS_OLIVINE
+  while ((opt = getopt(argc, argv, "+i:o:f:m:e:s:j:t:T:dnCB:S:M:x:Q")) > 0)
+#else // IS_OLIVINE
   while ((opt = getopt(argc, argv, "+i:o:f:m:e:s:t:T:dnCB:S:M:x:Q")) > 0)
+#endif
+#else // OLIVINE_COMMON
+  while ((opt = getopt(argc, argv, "+i:o:f:m:t:T:dnCB:S:M:x:Q")) > 0)
+#endif
 
     switch (opt) {
       case 'i': /* input dir */
@@ -8478,7 +8325,8 @@ int main(int argc, char** argv) {
         extras_dir = optarg;
         break;
 
-      case 'e': { /* EEVEE: Number of fuzz inputs to generate (0 for normal) */
+#ifdef OLIVINE_COMMON
+      case 'e': { /* Number of fuzz inputs to generate (0 for normal) */
 
           if (sscanf(optarg, "%u", &fuzz_inputs_to_generate) < 1 ||
               optarg[0] == '-') FATAL("Bad syntax used for -e");
@@ -8487,17 +8335,29 @@ int main(int argc, char** argv) {
 
       }
 
-      case 's': { /* EEVEE: Custom randomization seed */
+      case 's': { /* Custom randomization seed */
 
           if (sscanf(optarg, "%u", &randomization_seed) < 1 ||
-              optarg[0] == '-') FATAL("Bad syntax used for -e");
+              optarg[0] == '-') FATAL("Bad syntax used for -s");
 
-	  has_fixed_randomization_seed = 1;
-	  srandom(randomization_seed);
+          has_fixed_randomization_seed = 1;
+          srandom(randomization_seed);
 
           break;
 
       }
+#endif
+
+#ifdef IS_OLIVINE
+      case 'j': { /* Type of JIT compiler to fuzz */
+          if (strcmp(optarg, "jsc") == 0) {
+          } else if (strcmp(optarg, "v8") == 0) {
+          } else if (strcmp(optarg, "ch") == 0) {
+          } else {
+            FATAL("Invalid JavaScript JIT compiler specified");
+          }
+      }
+#endif
 
       case 't': { /* timeout */
 
