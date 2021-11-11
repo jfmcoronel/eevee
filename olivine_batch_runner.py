@@ -35,6 +35,7 @@ def run_slaves(cmd: str, prefix: str):
 
     for n in range(slave_count):
         new_cmd = cmd.replace('output', f'output-{n}')
+        print(new_cmd)
         os.system(f'tmux new-window -n {prefix}-slave-{n} "AFL_NO_UI=1 {new_cmd}; /bin/bash"')
 
 
@@ -46,6 +47,7 @@ def start(jit_compiler_code: str, seed: int, until_n_inputs: int):
     while True:
         time.sleep(60)
         output = os.popen('tmux ls')
+        print(output)
 
         if 'populate' not in output:
             break
@@ -72,6 +74,7 @@ def fuzz(fuzz_target_path: str, jit_compiler_code: str, seed: int, until_n_input
 
 def main():
     cmd = sys.argv[1]
+    print(cmd)
 
     if cmd == 'start':
         jit_compiler_code, seed, until_n_inputs = sys.argv[2:]
