@@ -111,7 +111,7 @@ def main():
 
         populate(fuzz_target_path, jit_compiler_code, until_n_inputs, seed)
 
-    elif cmd == 'populate':
+    elif cmd == 'fuzz':
         jit_compiler_code, seed, until_n_inputs = sys.argv[2:]
 
         seed = int(seed)
