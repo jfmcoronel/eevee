@@ -996,7 +996,7 @@ static inline u8 has_new_bits(u8* virgin_map, bool update) {
       }
   } else {
       fprintf(stderr, "-- COUNT: %llu (already seen)--\n", count);
-      return 2;
+      return 0;
   }
 
 	// If already found:
