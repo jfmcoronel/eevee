@@ -1,7 +1,7 @@
 import glob
 import os
 import sys
-from typing import NamedTuple
+from typing import Dict, NamedTuple
 
 
 # Usage:
@@ -33,7 +33,8 @@ ch_metrics_info = MetricsInfo(
     cov_source_code_path='/home/jfmcoronel/ch-cov-src/out/Debug/',
 )
 
-metrics_info_mapping: dict[str, MetricsInfo] = {
+# Python 3.6 typing woes
+metrics_info_mapping: Dict[str, MetricsInfo] = {
     'v8': v8_metrics_info,
     'ch': ch_metrics_info,
 }
