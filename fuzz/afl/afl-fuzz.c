@@ -22,10 +22,6 @@
 
 #include "olivine.h"
 
-#ifdef IS_OLIVINE
-/*#define OLIVINE_FLAVOR_SOLO*/
-#endif
-
 #define AFL_MAIN
 #define MESSAGES_TO_STDOUT
 
@@ -93,7 +89,7 @@ int has_fixed_randomization_seed = 0;
 u32 randomization_seed = 0;
 #endif
 
-#ifdef IS_OLIVINE
+#ifdef OLIVINE_COMMON
 #define OLIVINE_JIT_COMPILER_NONE 0
 #define OLIVINE_JIT_COMPILER_JSC 1
 #define OLIVINE_JIT_COMPILER_V8 2
@@ -8339,18 +8335,19 @@ int main(int argc, char** argv) {
           break;
 
       }
-#endif
 
-#ifdef IS_OLIVINE
       case 'j': { /* Type of JIT compiler to fuzz */
           if (strcmp(optarg, "jsc") == 0) {
+              jit_compiler_type = OLIVINE_JIT_COMPILER_JSC;
           } else if (strcmp(optarg, "v8") == 0) {
+              jit_compiler_type = OLIVINE_JIT_COMPILER_V8;
           } else if (strcmp(optarg, "ch") == 0) {
+              jit_compiler_type = OLIVINE_JIT_COMPILER_CH;
           } else {
-            FATAL("Invalid JavaScript JIT compiler specified");
+              FATAL("Invalid JavaScript JIT compiler specified");
           }
       }
-#endif
+#endif // OLIVINE_COMMON
 
       case 't': { /* timeout */
 
