@@ -73,9 +73,11 @@ def populate(fuzz_target_path: str, jit_compiler_code: str, until_n_inputs: int,
 
     execute(f'cd ~/die && rm -rf ~/die/corpus/ && python3 ./fuzz/scripts/make_initial_corpus.py ./DIE-corpus ./corpus')
 
-    cmd: list[str] = []
-    cmd.append(f'cd ~/die && rm -rf ~/die/output')
-    cmd.append(f'{{ time ./fuzz/afl/afl-fuzz -s {seed} -e {until_n_inputs} -m none -o output -i ./corpus/output "{fuzz_target_path}" {lib_string} @@ ; }} 2> >(tee ~/die/output/time-populate.txt >&2)')
+    cmd: list[str] = [
+        'sudo bash -c "echo core >/proc/sys/kernel/core_pattern"',
+        f'cd ~/die && rm -rf ~/die/output',
+        f'{{ time ./fuzz/afl/afl-fuzz -s {seed} -e {until_n_inputs} -m none -o output -i ./corpus/output "{fuzz_target_path}" {lib_string} @@ ; }} 2> >(tee ~/die/output/time-populate.txt >&2)',
+    ]
 
     run_slaves(' ; '.join(cmd), 'populate', False)
 
@@ -83,12 +85,14 @@ def populate(fuzz_target_path: str, jit_compiler_code: str, until_n_inputs: int,
 def fuzz(jit_compiler_code: str, until_n_inputs: int, seed: int):
     lib_string = get_lib_string(jit_compiler_code)
     fuzz_target_path = get_fuzz_target_path(jit_compiler_code)
-    cmd: list[str] = []
 
-    cmd.append('cd ~/die')
-    cmd.append(f'{{{{ time ./fuzz/afl/afl-fuzz -s {seed} -e {until_n_inputs} -j {jit_compiler_code} -m none -o output "{fuzz_target_path}" {lib_string} @@ ; }}}} 2> >(tee ~/die/output/time-fuzz.txt >&2)')
-    cmd.append(f'{{{{ time python3 ~/die/olivine_slave_analysis.py optset {{SLAVENUMBER}} {jit_compiler_code} ; }}}} 2> >(tee ~/die/output/time-analyze-optset.txt >&2)')
-    cmd.append(f'{{{{ time python3 ~/die/olivine_slave_analysis.py coverage {{SLAVENUMBER}} {jit_compiler_code} ; }}}} 2> >(tee ~/die/output/time-analyze-coverage.txt >&2)')
+    cmd: list[str] = [
+        'sudo bash -c "echo core >/proc/sys/kernel/core_pattern"',
+        'cd ~/die',
+        f'{{{{ time ./fuzz/afl/afl-fuzz -s {seed} -e {until_n_inputs} -j {jit_compiler_code} -m none -o output "{fuzz_target_path}" {lib_string} @@ ; }}}} 2> >(tee ~/die/output/time-fuzz.txt >&2)',
+        f'{{{{ time python3 ~/die/olivine_slave_analysis.py optset {{SLAVENUMBER}} {jit_compiler_code} ; }}}} 2> >(tee ~/die/output/time-analyze-optset.txt >&2)',
+        f'{{{{ time python3 ~/die/olivine_slave_analysis.py coverage {{SLAVENUMBER}} {jit_compiler_code} ; }}}} 2> >(tee ~/die/output/time-analyze-coverage.txt >&2)',
+    ]
 
     run_slaves(' ; '.join(cmd), 'fuzz', True)
 
