@@ -968,8 +968,10 @@ static inline u8 has_new_bits(u8* virgin_map, bool update) {
 #ifdef OLIVINE_COMMON
   mutation_ctr++;
   fprintf(stderr, "-- START (round %d, mutation %d/100) [%d to generate] --\n", fuzz_js_ctr, mutation_ctr, fuzz_inputs_to_generate);
+#endif // OLIVINE_COMMON
 
-  int ret = 0;
+#ifdef IS_OLIVINE
+  u8 ret = 0;
 
   fprintf(stderr, "-- PY START --\n");
 
@@ -998,18 +1000,10 @@ static inline u8 has_new_bits(u8* virgin_map, bool update) {
       return 0;
   }
 
-	// If already found:
-	//   Return 0 (do not save)
-	// Else:
-	//   If update:
-	//     Add to dict ("Inserting...")
-	//     Return 0 (do not save; saved earlier)
-	//   Else:
-	//     Return 2 (save) ("New...")
-
   fprintf(stderr, "-- END --\n");
   return ret;
-#else
+#endif // IS_OLIVINE
+
   new_bits_num = 0;
   u32 j;
 
@@ -1091,8 +1085,8 @@ static inline u8 has_new_bits(u8* virgin_map, bool update) {
 
   if (ret && virgin_map == virgin_bits) bitmap_changed = 1;
 
+  fprintf(stderr, "-- END --\n");
   return ret;
-#endif
 }
 
 /* Count the number of bits set in the provided bitmap. Used for the status
