@@ -62,18 +62,28 @@ def start(jit_compiler_code: str, seed: int, until_n_inputs: int):
 
 def populate(fuzz_target_path: str, jit_compiler_code: str, seed: int, until_n_inputs: int):
     lib_string = get_lib_string(jit_compiler_code)
-    cmd = f'cd ~/die ; {{ time ./fuzz/afl/afl-fuzz -s {seed} -e {until_n_inputs} -m none -o output -i ./corpus/output "{fuzz_target_path}" {lib_string} @@ ; }} 2> >(tee ~/die/output/time-populate.txt >&2)'
-    run_slaves(cmd, 'populate')
+    cmd: list[str] = []
+
+    cmd.append(f'cd ~/die')
+    cmd.append(f'{{ time ./fuzz/afl/afl-fuzz -s {seed} -e {until_n_inputs} -m none -o output -i ./corpus/output "{fuzz_target_path}" {lib_string} @@ ; }} 2> >(tee ~/die/output/time-populate.txt >&2)')
+
+    run_slaves(' ; '.join(cmd), 'populate')
 
 
 def fuzz(fuzz_target_path: str, jit_compiler_code: str, seed: int, until_n_inputs: int):
     lib_string = get_lib_string(jit_compiler_code)
-    cmd = f'cd ~/die ; {{ time ./fuzz/afl/afl-fuzz -s {seed} -e {until_n_inputs} -m none -o output "{fuzz_target_path}" {lib_string} @@ ; }} 2> >(tee ~/die/output/time-fuzz.txt >&2)'
-    cmd += f' ; tmux rename-window analysis'
-    cmd += f' ; {{ time python3 ~/die/olivine_slave_analysis.py ; }} 2> >(tee ~/die/output/time-analyze.txt >&2)'
-    cmd += f' ; tmux rename-window done'
-    cmd += f' ; /bin/bash'
-    run_slaves(cmd, 'fuzz')
+    cmd: list[str] = []
+
+    cmd.append(f'cd ~/die')
+    cmd.append(f'{{ time ./fuzz/afl/afl-fuzz -s {seed} -e {until_n_inputs} -m none -o output "{fuzz_target_path}" {lib_string} @@ ; }} 2> >(tee ~/die/output/time-fuzz.txt >&2)')
+    cmd.append(f'cd ~/die')
+    cmd.append(f'{{ time ./fuzz/afl/afl-fuzz -s {seed} -e {until_n_inputs} -m none -o output "{fuzz_target_path}" {lib_string} @@ ; }} 2> >(tee ~/die/output/time-fuzz.txt >&2)')
+    cmd.append(f'tmux rename-window analysis')
+    cmd.append(f'{{ time python3 ~/die/olivine_slave_analysis.py ; }} 2> >(tee ~/die/output/time-analyze.txt >&2)')
+    cmd.append(f'tmux rename-window done')
+    cmd.append(f'/bin/bash')
+
+    run_slaves(' ; '.join(cmd), 'fuzz')
 
 
 def main():
