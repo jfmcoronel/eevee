@@ -37,7 +37,8 @@ def get_fuzz_target_path(jit_compiler_code: str):
 def run_slaves(cmd: str, prefix: str, persist: bool):
     slave_count = multiprocessing.cpu_count()
 
-    for n in range(slave_count):
+    # Start from 01
+    for n in range(1, slave_count + 1):
         n = str(n).zfill(2)
 
         new_cmd = cmd.replace('output', f'output-{n}') \

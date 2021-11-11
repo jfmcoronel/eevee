@@ -106,7 +106,7 @@ def main():
         generate_optsets(n, metrics_info)
         execute(f'tmux rename-window done-coverage-{n}')
     elif cmd == 'coverage':
-        if n_num == 0:
+        if n_num == 1:
             # Cannot be parallelized yet
             execute(f'tmux rename-window coverage-{n}')
             generate_coverage(n, metrics_info)
