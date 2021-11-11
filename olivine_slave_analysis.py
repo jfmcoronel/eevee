@@ -1,44 +1,40 @@
+from dataclasses import dataclass
 import sys
 
+
 # Usage:
-# python3 olivine_slave_analysis.py <n> <covtargetpath> <optsetflags> <timeout> <coveragesrcpath>
+# python3 olivine_slave_analysis.py <n> <jit_compiler_code>
 
-# let chakraCoreMetricsFetchInfo =
-#     { PathToFuzzTarget = "/home/jfmcoronel/ch"
-#       PathToCovTarget = "/home/jfmcoronel/ch-cov-src/out/Debug/ch"
-#       TimeoutSeconds = 10
-#       OptSetFlags = "-bgjit- -dump:backend"
-#       CoverageSrcPath = "/home/jfmcoronel/ch-cov-src/out/Debug/"
-#       JitCompilerCode = "ch" }
+TIMEOUT = 10
 
 
-# let v8MetricsFetchInfo =
-#     { PathToFuzzTarget = "/home/jfmcoronel/d8"
-#       PathToCovTarget = "/home/jfmcoronel/die/engines/v8/v8/out/Debug/d8"
-#       TimeoutSeconds = 10
-#       OptSetFlags = "--trace-turbo-reduction"
-#       CoverageSrcPath = "/home/jfmcoronel/die/engines/v8/v8/out/Debug/"
-#       JitCompilerCode = "v8" }
+@dataclass(frozen=True, slots=True)
+class MetricsInfo:
+    cov_target_path: str
+    opt_set_flags: str
+    cov_source_code_path: str
 
-#             [ $"{timedCmdBlock} > >(tee ~/die/output-0/time_metrics.txt) 2>&1"
 
-# # Coverage commands
-#     [ "rm -rf ~/die/output-0/@coverage"
-#       "mkdir ~/die/output-0/@coverage"
-#       "cd ~/die/output-0/@coverage"
-#       "~/cov_runner.sh"
-#       $"cd {coverageBasePath}"
-#       $"/usr/bin/lcov --capture --no-checksum --directory {coverageBasePath} --output-file ~/die/output-0/@coverage/.lcovinfo --gcov-tool ~/gcov_for_clang.sh"
-#       "genhtml ~/die/output-0/@coverage/.lcovinfo --output-directory ~/die/output-0/@coverage/ --ignore-errors=source" ]
+v8_metrics_info = MetricsInfo(
+    cov_target_path='/home/jfmcoronel/die/engines/v8/v8/out/Debug/d8',
+    opt_set_flags='--trace-turbo-reduction',
+    cov_source_code_path='/home/jfmcoronel/die/engines/v8/v8/out/Debug/',
+)
 
-#     $"""cat << EOF > ~/cov_runner.sh
-# #!/bin/bash
-# for p in ~/die/output-0/all_inputs/*.js; do
-#     echo {pathToCovTarget} \$p;
-#     timeout {timeoutSeconds} {pathToCovTarget} \$p;
-# done
-# EOF
-# chmod +x ~/cov_runner.sh"""
+ch_metrics_info = MetricsInfo(
+    cov_target_path='/home/jfmcoronel/ch-cov-src/out/Debug/ch',
+    opt_set_flags='-bgjit- -dump:backend',
+    cov_source_code_path='/home/jfmcoronel/ch-cov-src/out/Debug/',
+)
+
+metrics_info_mapping: dict[str, MetricsInfo] = {
+    'v8': v8_metrics_info,
+    'ch': ch_metrics_info,
+}
+
+
+def get_metrics_info(jit_compiler_code: str) -> MetricsInfo:
+    return metrics_info_mapping[jit_compiler_code]
 
 
 # # Optset commands
@@ -64,3 +60,36 @@ import sys
 # done
 # EOF
 # chmod +x ~/optset_runner.sh"""
+
+def analyze():
+    pass
+
+
+def main():
+    n, jit_compiler_code = sys.argv
+    n = int(n)
+
+    metrics_info = get_metrics_info(jit_compiler_code)
+
+
+if __name__ == '__main__':
+    main()
+
+
+# # Coverage commands
+#     [ "rm -rf ~/die/output-0/@coverage"
+#       "mkdir ~/die/output-0/@coverage"
+#       "cd ~/die/output-0/@coverage"
+#       "~/cov_runner.sh"
+#       $"cd {coverageBasePath}"
+#       $"/usr/bin/lcov --capture --no-checksum --directory {coverageBasePath} --output-file ~/die/output-0/@coverage/.lcovinfo --gcov-tool ~/gcov_for_clang.sh"
+#       "genhtml ~/die/output-0/@coverage/.lcovinfo --output-directory ~/die/output-0/@coverage/ --ignore-errors=source" ]
+
+#     $"""cat << EOF > ~/cov_runner.sh
+# #!/bin/bash
+# for p in ~/die/output-0/all_inputs/*.js; do
+#     echo {pathToCovTarget} \$p;
+#     timeout {timeoutSeconds} {pathToCovTarget} \$p;
+# done
+# EOF
+# chmod +x ~/cov_runner.sh"""
