@@ -48,8 +48,6 @@ def run_slaves(cmd: str, prefix: str, persist: bool):
 
 
 def start(jit_compiler_code: str, until_n_inputs: int, seed: int):
-    execute(f'cd ~/tmux && git pull')
-
     cmd = f'tmux new-session -s populate -d "python3 ~/die/olivine_batch_runner.py populate {jit_compiler_code} {seed} {until_n_inputs}"'
     execute(cmd)
 
