@@ -8248,11 +8248,7 @@ int main(int argc, char** argv) {
   srandom(tv.tv_sec ^ tv.tv_usec ^ getpid());
 
 #ifdef OLIVINE_COMMON
-#ifdef IS_OLIVINE
   while ((opt = getopt(argc, argv, "+i:o:f:m:e:s:j:t:T:dnCB:S:M:x:Q")) > 0)
-#else // IS_OLIVINE
-  while ((opt = getopt(argc, argv, "+i:o:f:m:e:s:t:T:dnCB:S:M:x:Q")) > 0)
-#endif
 #else // OLIVINE_COMMON
   while ((opt = getopt(argc, argv, "+i:o:f:m:t:T:dnCB:S:M:x:Q")) > 0)
 #endif
