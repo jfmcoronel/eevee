@@ -74,7 +74,7 @@ def main():
     cmd = sys.argv[1]
 
     if cmd == 'start':
-        jit_compiler_code, seed, until_n_inputs = sys.argv[1:]
+        jit_compiler_code, seed, until_n_inputs = sys.argv[2:]
 
         seed = int(seed)
         until_n_inputs = int(until_n_inputs)
@@ -82,7 +82,7 @@ def main():
         start(jit_compiler_code, seed, until_n_inputs)
 
     elif cmd == 'populate':
-        jit_compiler_code, seed, until_n_inputs = sys.argv[1:]
+        jit_compiler_code, seed, until_n_inputs = sys.argv[2:]
 
         seed = int(seed)
         until_n_inputs = int(until_n_inputs)
@@ -91,7 +91,7 @@ def main():
         populate(fuzz_target_path, jit_compiler_code, seed, until_n_inputs)
 
     elif cmd == 'populate':
-        jit_compiler_code, seed, until_n_inputs = sys.argv[1:]
+        jit_compiler_code, seed, until_n_inputs = sys.argv[2:]
 
         seed = int(seed)
         until_n_inputs = int(until_n_inputs)
