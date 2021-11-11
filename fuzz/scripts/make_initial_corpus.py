@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-import multiprocessing
 import argparse
 import glob
+import multiprocessing
 import os
-import sys
 import shutil
+import sys
 
 """
 Save initial files alphabeticall sorted according to their size
@@ -43,8 +43,8 @@ def main():
     # TODO: Use a single configuration file for javascript and python
     files = list(filter(lambda f: os.path.getsize(f) < 128 * 1024, files))
 
-    n_cpu = 1
-    #n_cpu = int(args.n_cpu)
+    n_cpu = multiprocessing.cpu_count() - 4
+    # n_cpu = int(args.n_cpu)
     splits = [[] for i in range(0, n_cpu)]
     for i in range(0, len(files), n_cpu):
         for j in range(n_cpu):
