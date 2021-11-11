@@ -8342,6 +8342,8 @@ int main(int argc, char** argv) {
           } else {
               FATAL("Invalid JavaScript JIT compiler specified");
           }
+
+          break;
       }
 #endif // OLIVINE_COMMON
 
