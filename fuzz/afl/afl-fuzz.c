@@ -4862,17 +4862,21 @@ EXP_ST u8 common_fuzz_stuff(char** argv, u8* out_buf, u32 len) {
 
   write_to_testcase(out_buf, len);
 
-// Save all fuzz inputs
+// Save all fuzz inputs from actual fuzzing
 #ifdef OLIVINE_COMMON
   fuzz_input_ctr++;
-  u8 *fn = alloc_printf("%s/all_inputs/%06d.js", out_dir, fuzz_input_ctr);
-  int fd = open(fn, O_WRONLY | O_CREAT, 0600);
-  ck_free(fn);
-  FILE *fp = fdopen(fd, "w");
-  if (!fp) PFATAL("fdopen() failed");
-  fprintf(fp, "%s", out_buf);
-  fclose(fp);
-  close(fd);
+  if (!in_dir) {
+    u8 *fn = alloc_printf("%s/all_inputs/%06d.js", out_dir, fuzz_input_ctr);
+    int fd = open(fn, O_WRONLY | O_CREAT, 0600);
+    ck_free(fn);
+
+    FILE *fp = fdopen(fd, "w");
+    if (!fp) PFATAL("fdopen() failed");
+    fprintf(fp, "%s", out_buf);
+
+    fclose(fp);
+    close(fd);
+  }
 #endif
 
   fault = run_target(argv, exec_tmout);
