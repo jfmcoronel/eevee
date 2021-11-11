@@ -20,8 +20,7 @@
 
  */
 
-#define IS_OLIVINE
-#define OLIVINE_COMMON
+#include "olivine.h"
 
 #ifdef IS_OLIVINE
 /*#define OLIVINE_FLAVOR_SOLO*/
