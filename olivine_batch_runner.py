@@ -64,9 +64,10 @@ def start(jit_compiler_code: str, until_n_inputs: int, seed: int):
 
 def populate(fuzz_target_path: str, jit_compiler_code: str, until_n_inputs: int, seed: int):
     lib_string = get_lib_string(jit_compiler_code)
-    cmd: list[str] = []
 
-    cmd.append(f'cd ~/die && rm -rf ~/die/corpus/ && python3 ./fuzz/scripts/make_initial_corpus.py ./DIE-corpus ./corpus')
+    execute(f'cd ~/die && rm -rf ~/die/corpus/ && python3 ./fuzz/scripts/make_initial_corpus.py ./DIE-corpus ./corpus')
+
+    cmd: list[str] = []
     cmd.append(f'cd ~/die')
     cmd.append(f'{{ time ./fuzz/afl/afl-fuzz -s {seed} -e {until_n_inputs} -m none -o output -i ./corpus/output "{fuzz_target_path}" {lib_string} @@ ; }} 2> >(tee ~/die/output/time-populate.txt >&2)')
 
