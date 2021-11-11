@@ -1,0 +1,3 @@
+[submodule "DIE-corpus"]
+	path = DIE-corpus
+	url = https://github.com/jfmcoronel/js-die-corpus
