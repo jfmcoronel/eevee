@@ -56,21 +56,21 @@ def start(jit_compiler_code: str, seed: int, until_n_inputs: int):
         if 'populate' not in output:
             break
 
-    cmd = f'tmux new-session -s fuzz -d "~/die/olivine_batch_runner.py fuzz {jit_compiler_code} {seed} {until_n_inputs}"'
+    cmd = f'tmux new-session -s fuzz -d "python3 ~/die/olivine_batch_runner.py fuzz {jit_compiler_code} {seed} {until_n_inputs}"'
     execute(cmd)
 
 
 def populate(fuzz_target_path: str, jit_compiler_code: str, seed: int, until_n_inputs: int):
     lib_string = get_lib_string(jit_compiler_code)
-    cmd = f'{{{{ time ./fuzz/afl/afl-fuzz -s {seed} -e {until_n_inputs} -m none -o output -i ./corpus/output "{fuzz_target_path}" {lib_string} @@ }} 2> >(tee ~/die/output/time-populate.txt >&2)'
+    cmd = f'{{ time ./fuzz/afl/afl-fuzz -s {seed} -e {until_n_inputs} -m none -o output -i ./corpus/output "{fuzz_target_path}" {lib_string} @@ }} 2> >(tee ~/die/output/time-populate.txt >&2)'
     run_slaves(cmd, 'populate')
 
 
 def fuzz(fuzz_target_path: str, jit_compiler_code: str, seed: int, until_n_inputs: int):
     lib_string = get_lib_string(jit_compiler_code)
-    cmd = f'{{{{ time ./fuzz/afl/afl-fuzz -s {seed} -e {until_n_inputs} -m none -o output "{fuzz_target_path}" {lib_string} @@ }} 2> >(tee ~/die/output/time-fuzz.txt >&2)'
+    cmd = f'{{ time ./fuzz/afl/afl-fuzz -s {seed} -e {until_n_inputs} -m none -o output "{fuzz_target_path}" {lib_string} @@ }} 2> >(tee ~/die/output/time-fuzz.txt >&2)'
     cmd += f' ; tmux rename-window analysis'
-    cmd += f' ; {{{{ time python3 ~/die/olivine_slave_analysis.py }} 2> >(tee ~/die/output/time-analyze.txt >&2)'
+    cmd += f' ; {{ time python3 ~/die/olivine_slave_analysis.py }} 2> >(tee ~/die/output/time-analyze.txt >&2)'
     cmd += f' ; tmux rename-window done'
     cmd += f' ; /bin/bash'
     run_slaves(cmd, 'fuzz')
