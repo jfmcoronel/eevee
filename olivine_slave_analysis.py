@@ -1,7 +1,7 @@
-from dataclasses import dataclass
 import glob
 import os
 import sys
+from typing import NamedTuple
 
 
 # Usage:
@@ -11,8 +11,8 @@ import sys
 TIMEOUT = 10
 
 
-@dataclass(frozen=True, slots=True)
-class MetricsInfo:
+# Python 3.6 has no dataclasses
+class MetricsInfo(NamedTuple):
     fuzz_target_path: str
     cov_target_path: str
     optset_flags: str
@@ -46,10 +46,6 @@ def get_metrics_info(jit_compiler_code: str) -> MetricsInfo:
 def execute(cmd: str):
     print(cmd)
     os.system(cmd)
-
-
-def get_optset_cmd(metrics_info: MetricsInfo):
-    ...
 
 
 def generate_optsets(n: int, metrics_info: MetricsInfo):
