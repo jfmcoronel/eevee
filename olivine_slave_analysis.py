@@ -49,7 +49,7 @@ def execute(cmd: str):
     os.system(cmd)
 
 
-def generate_optsets(n: int, metrics_info: MetricsInfo):
+def generate_optsets(n: str, metrics_info: MetricsInfo):
     output_basepath = f'~/die/output-{n}/@optset'
     fuzz_input_basepath = f'/home/jfmcoronel/die/output-{n}/all_inputs/*.js'
 
@@ -71,7 +71,7 @@ def generate_optsets(n: int, metrics_info: MetricsInfo):
         execute(actual_cmd)
 
 
-def generate_coverage(n: int, metrics_info: MetricsInfo):
+def generate_coverage(n: str, metrics_info: MetricsInfo):
     output_basepath = f'~/die/output-{n}/@coverage'
     fuzz_input_basepath = f'/home/jfmcoronel/die/output-{n}/all_inputs/*.js'
 
@@ -98,14 +98,17 @@ def generate_coverage(n: int, metrics_info: MetricsInfo):
 
 def main():
     cmd, n, jit_compiler_code = sys.argv[1:]
-    n = int(n)
+    n = n.zfill(2)
     metrics_info = get_metrics_info(jit_compiler_code)
 
     if cmd == 'optset':
+        execute(f'tmux rename-window optset-{n}')
         generate_optsets(n, metrics_info)
+        execute(f'tmux rename-window done-coverage-{n}')
     elif cmd == 'coverage':
+        execute(f'tmux rename-window coverage-{n}')
         generate_coverage(n, metrics_info)
-        pass
+        execute(f'tmux rename-window done-coverage-{n}')
     else:
         assert False, f'Invalid arguments: {sys.argv}'
 

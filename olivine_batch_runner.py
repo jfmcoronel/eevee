@@ -38,14 +38,16 @@ def run_slaves(cmd: str, prefix: str, persist: bool):
     slave_count = multiprocessing.cpu_count()
 
     for n in range(slave_count):
+        n = str(n).zfill(2)
+
         new_cmd = cmd.replace('output', f'output-{n}') \
                      .format(SLAVENUMBER=n)
         print(new_cmd)
 
         if persist:
-            execute(f'tmux new-window -n {prefix}-slave-{n} "{new_cmd}; /bin/bash"')
+            execute(f'tmux new-window -n {prefix}-{n} "{new_cmd}; /bin/bash"')
         else:
-            execute(f'tmux new-window -n {prefix}-slave-{n} "{new_cmd}"')
+            execute(f'tmux new-window -n {prefix}-{n} "{new_cmd}"')
 
 
 def start(jit_compiler_code: str, until_n_inputs: int, seed: int):
@@ -84,10 +86,8 @@ def fuzz(jit_compiler_code: str, until_n_inputs: int, seed: int):
 
     cmd.append('cd ~/die')
     cmd.append(f'{{{{ time ./fuzz/afl/afl-fuzz -s {seed} -e {until_n_inputs} -j {jit_compiler_code} -m none -o output "{fuzz_target_path}" {lib_string} @@ ; }}}} 2> >(tee ~/die/output/time-fuzz.txt >&2)')
-    cmd.append('tmux rename-window analysis-{SLAVENUMBER}')
     cmd.append(f'{{{{ time python3 ~/die/olivine_slave_analysis.py optset {{SLAVENUMBER}} {jit_compiler_code} ; }}}} 2> >(tee ~/die/output/time-analyze-optset.txt >&2)')
     cmd.append(f'{{{{ time python3 ~/die/olivine_slave_analysis.py coverage {{SLAVENUMBER}} {jit_compiler_code} ; }}}} 2> >(tee ~/die/output/time-analyze-coverage.txt >&2)')
-    cmd.append('tmux rename-window done-{SLAVENUMBER}')
 
     run_slaves(' ; '.join(cmd), 'fuzz', True)
 
