@@ -82,7 +82,7 @@ def fuzz(jit_compiler_code: str, until_n_inputs: int, seed: int):
     cmd: list[str] = []
 
     cmd.append(f'cd ~/die')
-    cmd.append(f'{{ time ./fuzz/afl/afl-fuzz -s {seed} -e {until_n_inputs} -m none -o output "{fuzz_target_path}" {lib_string} @@ ; }} 2> >(tee ~/die/output/time-fuzz.txt >&2)')
+    cmd.append(f'{{ time ./fuzz/afl/afl-fuzz -s {seed} -e {until_n_inputs} -j {jit_compiler_code} -m none -o output "{fuzz_target_path}" {lib_string} @@ ; }} 2> >(tee ~/die/output/time-fuzz.txt >&2)')
     cmd.append(f'tmux rename-window analysis')
     cmd.append(f'{{ time python3 ~/die/olivine_slave_analysis.py ; }} 2> >(tee ~/die/output/time-analyze.txt >&2)')
     cmd.append(f'tmux rename-window done')
@@ -117,9 +117,8 @@ def main():
 
         seed = int(seed)
         until_n_inputs = int(until_n_inputs)
-        fuzz_target_path = get_fuzz_target_path(jit_compiler_code)
 
-        fuzz(fuzz_target_path, jit_compiler_code, until_n_inputs, seed)
+        fuzz(jit_compiler_code, until_n_inputs, seed)
 
     else:
         assert False, f'Invalid arguments: {sys.argv}'
