@@ -97,8 +97,8 @@ def generate_coverage(n: str, metrics_info: MetricsInfo):
 
 
 def main():
-    cmd, n, jit_compiler_code = sys.argv[1:]
-    n = n.zfill(2)
+    cmd, n_num, jit_compiler_code = sys.argv[1:]
+    n = n_num.zfill(2)
     metrics_info = get_metrics_info(jit_compiler_code)
 
     if cmd == 'optset':
@@ -106,8 +106,11 @@ def main():
         generate_optsets(n, metrics_info)
         execute(f'tmux rename-window done-coverage-{n}')
     elif cmd == 'coverage':
-        execute(f'tmux rename-window coverage-{n}')
-        generate_coverage(n, metrics_info)
+        if n_num == 0:
+            # Cannot be parallelized yet
+            execute(f'tmux rename-window coverage-{n}')
+            generate_coverage(n, metrics_info)
+
         execute(f'tmux rename-window done-coverage-{n}')
     else:
         assert False, f'Invalid arguments: {sys.argv}'
