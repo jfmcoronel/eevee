@@ -97,7 +97,7 @@ def generate_coverage(n: int, metrics_info: MetricsInfo):
 
 
 def main():
-    cmd, n, jit_compiler_code = sys.argv
+    cmd, n, jit_compiler_code = sys.argv[1:]
     n = int(n)
     metrics_info = get_metrics_info(jit_compiler_code)
 
