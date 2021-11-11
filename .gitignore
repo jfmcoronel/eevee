@@ -1,7 +1,5 @@
 *.swp
 output-*
 corpus
-*.jsi
-*.t
 .DS_Store
 __pycache__
