@@ -60,7 +60,7 @@ def generate_optsets(n: int, metrics_info: MetricsInfo):
     ]
     execute(' ; '.join(cmd))
 
-    for full_js_path in glob.glob(fuzz_input_basepath):
+    for full_js_path in sorted(glob.glob(fuzz_input_basepath)):
         js_name_ext = os.path.basename(full_js_path)
         js_basename = os.path.splitext(js_name_ext)[0]
         optset_output_path = os.path.join(output_basepath, f'{js_basename}.txt')
@@ -82,7 +82,7 @@ def generate_coverage(n: int, metrics_info: MetricsInfo):
     ]
     execute(' ; '.join(cmd_before))
 
-    for full_js_path in glob.glob(fuzz_input_basepath):
+    for full_js_path in sorted(glob.glob(fuzz_input_basepath)):
         actual_cmd = f'timeout {TIMEOUT} {metrics_info.fuzz_target_path} {full_js_path}'
         execute(actual_cmd)
 
