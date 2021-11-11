@@ -43,7 +43,7 @@ def run_slaves(cmd: str, prefix: str):
         execute(f'tmux new-window -n {prefix}-slave-{n} "AFL_NO_UI=1 {new_cmd}; /bin/bash"')
 
 
-def start(jit_compiler_code: str, seed: int, until_n_inputs: int):
+def start(jit_compiler_code: str, until_n_inputs: int, seed: int):
     cmd = f'tmux new-session -s populate -d "python3 ~/die/olivine_batch_runner.py populate {jit_compiler_code} {seed} {until_n_inputs}"'
     execute(cmd)
 
@@ -60,7 +60,7 @@ def start(jit_compiler_code: str, seed: int, until_n_inputs: int):
     execute(cmd)
 
 
-def populate(fuzz_target_path: str, jit_compiler_code: str, seed: int, until_n_inputs: int):
+def populate(fuzz_target_path: str, jit_compiler_code: str, until_n_inputs: int, seed: int):
     lib_string = get_lib_string(jit_compiler_code)
     cmd: list[str] = []
 
@@ -71,7 +71,7 @@ def populate(fuzz_target_path: str, jit_compiler_code: str, seed: int, until_n_i
     run_slaves(' ; '.join(cmd), 'populate')
 
 
-def fuzz(fuzz_target_path: str, jit_compiler_code: str, seed: int, until_n_inputs: int):
+def fuzz(fuzz_target_path: str, jit_compiler_code: str, until_n_inputs: int, seed: int):
     lib_string = get_lib_string(jit_compiler_code)
     cmd: list[str] = []
 
@@ -92,12 +92,21 @@ def main():
     print(cmd)
 
     if cmd == 'start':
-        jit_compiler_code, seed, until_n_inputs = sys.argv[2:]
+        jit_compiler_code, until_n_inputs, seed = sys.argv[2:]
 
         seed = int(seed)
         until_n_inputs = int(until_n_inputs)
 
-        start(jit_compiler_code, seed, until_n_inputs)
+        start(jit_compiler_code, until_n_inputs, seed)
+
+    elif cmd == 'populate':
+        jit_compiler_code, until_n_inputs, seed = sys.argv[2:]
+
+        seed = int(seed)
+        until_n_inputs = int(until_n_inputs)
+        fuzz_target_path = get_fuzz_target_path(jit_compiler_code)
+
+        populate(fuzz_target_path, jit_compiler_code, until_n_inputs, seed)
 
     elif cmd == 'populate':
         jit_compiler_code, seed, until_n_inputs = sys.argv[2:]
@@ -106,16 +115,7 @@ def main():
         until_n_inputs = int(until_n_inputs)
         fuzz_target_path = get_fuzz_target_path(jit_compiler_code)
 
-        populate(fuzz_target_path, jit_compiler_code, seed, until_n_inputs)
-
-    elif cmd == 'populate':
-        jit_compiler_code, seed, until_n_inputs = sys.argv[2:]
-
-        seed = int(seed)
-        until_n_inputs = int(until_n_inputs)
-        fuzz_target_path = get_fuzz_target_path(jit_compiler_code)
-
-        fuzz(fuzz_target_path, jit_compiler_code, seed, until_n_inputs)
+        fuzz(fuzz_target_path, jit_compiler_code, until_n_inputs, seed)
 
     else:
         assert False, f'Invalid arguments: {sys.argv}'
