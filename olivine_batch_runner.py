@@ -54,9 +54,9 @@ def run_windowed_slaves_in_current_session(cmd: str, prefix: str, persist: bool)
                      .format(SLAVENUMBER=n)
 
         if persist:
-            execute(f'tmux new-window -n {prefix}-{n} """{new_cmd}; /bin/bash"""')
+            execute(f"tmux new-window -n {prefix}-{n} '{new_cmd}; /bin/bash'")
         else:
-            execute(f'tmux new-window -n {prefix}-{n} """{new_cmd}"""')
+            execute(f"tmux new-window -n {prefix}-{n} '{new_cmd}'")
 
 
 def start(jit_compiler_code: str, until_n_inputs: int, seed: int):
