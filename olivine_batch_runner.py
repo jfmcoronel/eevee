@@ -62,12 +62,12 @@ def run_windowed_slaves_in_current_session(cmd: str, prefix: str, persist: bool)
 
 def start(jit_compiler_code: str, until_n_inputs: int, seed: int):
     # Enables running each phase in a new tmux session
-    execute(f'tmux new-session -s populate -d "python3 ~/die/olivine_batch_runner.py populate {jit_compiler_code} {seed} {until_n_inputs}"')
+    execute(f'tmux new-session -s populate -d "python3 ~/die/olivine_batch_runner.py populate {jit_compiler_code} {until_n_inputs} {seed}"')
 
     # Must wait for all slaves to finish
     wait_until_tmux_session_closed('populate', 60)
 
-    execute(f'tmux new-session -s fuzz -d "python3 ~/die/olivine_batch_runner.py fuzz {jit_compiler_code} {seed} {until_n_inputs}"')
+    execute(f'tmux new-session -s fuzz -d "python3 ~/die/olivine_batch_runner.py fuzz {jit_compiler_code} {until_n_inputs} {seed}"')
 
 
 def populate(jit_compiler_code: str, until_n_inputs: int, seed: int):
@@ -77,7 +77,7 @@ def populate(jit_compiler_code: str, until_n_inputs: int, seed: int):
     cmd: list[str] = [
         f'cd ~/die && rm -rf ~/die/output',
         f'mkdir ~/die/output',
-        f'python3 ~/die/olivine_batch_runner.py populate-with-slave {{SLAVENUMBER}} {jit_compiler_code} {seed} {until_n_inputs}',
+        f'python3 ~/die/olivine_batch_runner.py populate-with-slave {{SLAVENUMBER}} {jit_compiler_code} {until_n_inputs} {seed}',
     ]
 
     run_windowed_slaves_in_current_session(' ; '.join(cmd), 'populate', False)
