@@ -14,7 +14,7 @@ bash_log_all_output = '>&2' if LOG_ALL_OUTPUT else ''
 # python3 olivine_batch_runner.py fuzz {jitCompilerCode} {seed} {untilNInputs}
 
 def execute(cmd: str):
-    print(cmd)
+    print(f'Executing: {cmd}')
     os.system(cmd)
 
 def get_lib_string(jit_compiler_code: str):
