@@ -957,25 +957,18 @@ int hits = 0;
 int total_tries = 0;
 int fuzz_js_ctr = 0;
 int mutation_ctr = 0;
-int fuzz_input_ctr = 0;
+int fuzz_input_generation_ctr = 0;
 
-static inline u8 has_new_bits(u8* virgin_map, bool update) {
-// stdout logging
-#ifdef OLIVINE_COMMON
-  mutation_ctr++;
-  fprintf(stderr, "-- START (round %d, mutation %d/100) [%d to generate] --\n", fuzz_js_ctr, mutation_ctr, fuzz_inputs_to_generate);
-#endif // OLIVINE_COMMON
-
-#ifdef IS_OLIVINE
+static u8 save_if_new_optset(char** argv, void* mem, u32 len, u8 fault) {
   u8 ret = 0;
 
-  fprintf(stderr, "-- PY START --\n");
+  ACTF("-- PY START --");
 
 	u8* fn = alloc_printf("%s/.olivine_dump", out_dir);
 	u8* cmdline = alloc_printf("python3 /home/jfmcoronel/die/olivine.py %d \"%s\"", jit_compiler_type, fn);
 	execute_sh(cmdline);
 
-  fprintf(stderr, "-- PY END --\n");
+  ACTF("-- PY END --");
 
   int fd;
   u64 count;
@@ -983,23 +976,235 @@ static inline u8 has_new_bits(u8* virgin_map, bool update) {
   read(fd, &count, 8);
   close(fd);
 
-  if (count == 1) {
-      if (update) {
-          fprintf(stderr, "-- COUNT: 1 (discovered new)--\n");
-          return 0;
-      } else {
-          fprintf(stderr, "-- COUNT: 1 (discovered new; update is false)--\n");
-          return 2;
-      }
-  } else {
-      fprintf(stderr, "-- COUNT: %llu (already seen)--\n", count);
+  if (count > 1) {
+      ACTF("-- COUNT: %llu (already seen)--\n", count);
       return 0;
   }
 
-  fprintf(stderr, "-- END --\n");
-  return ret;
-#endif // IS_OLIVINE
+  ACTF("-- COUNT: 1 (discovered new)--");
 
+  return 1;
+
+//  u8  *fn = "", *cmdline;
+//  u8  hnb = 0;
+//  s32 fd;
+//  u8  keeping = 0;//, res;
+//
+//  if (fault == crash_mode) {
+//
+//    /* Keep only if there are new bits in the map, add to queue for
+//       future fuzzing, etc. */
+//
+//    if (in_dir) {
+//      // Check for updating global coverage,
+//      // but regardless of coverage, we add all corpus
+//      has_new_bits(virgin_bits, true);
+//    }
+//    else {
+//			if (!(hnb = has_new_bits(virgin_bits, false))) {
+//				if (crash_mode) total_crashes++;
+//				return 0;
+//			}
+//
+//			globally_sync(false);
+//      if (!(hnb = has_new_bits(virgin_bits, true))) {
+//        return 0;
+//      }
+//    }
+//
+//#ifndef SIMPLE_FILES
+//
+//    fn = alloc_printf("%s/queue/id:%06u,%s", out_dir, queued_paths,
+//                      describe_op(hnb));
+//
+//#else
+//
+//    fn = alloc_printf("%s/queue/id_%06u", out_dir, queued_paths);
+//
+//#endif /* ^!SIMPLE_FILES */
+//
+//    add_to_queue(fn, len, 0);
+//
+//    if (hnb == 2) {
+//      // queue_top->has_new_cov = 1;
+//      queued_with_cov++;
+//    }
+//
+//    // queue_top->exec_cksum = hash32(trace_bits, MAP_SIZE, HASH_CONST);
+//
+//    /* Try to calibrate inline; this also calls update_bitmap_score() when
+//       successful. */
+//
+//    // res = calibrate_case(argv, queue_top, mem, queue_cycle - 1, 0);
+//
+//    // if (res == FAULT_ERROR)
+//    // FATAL("Unable to execute target application");
+//
+//    fd = open(fn, O_WRONLY | O_CREAT | O_EXCL, 0600);
+//    if (fd < 0) PFATAL("Unable to create '%s'", fn);
+//    ck_write(fd, mem, len, fn);
+//    close(fd);
+//
+//    write_coverage_diff();
+//    ACTF("Insert a new path: %s", current_fn);
+//    // Insert a file to redis server
+//
+//    cmdline = alloc_printf("node %s/../TS/redis_ctrl.js"
+//        " insertPath %s %s/.cov_diff",
+//        own_loc, current_fn, out_dir);
+//
+//    execute_sh(cmdline);
+//
+//    ck_free(cmdline);
+//
+//    keeping = 1;
+//  }
+//
+//  switch (fault) {
+//
+//    case FAULT_TMOUT:
+//
+//      /* Timeouts are not very interesting, but we're still obliged to keep
+//         a handful of samples. We use the presence of new bits in the
+//         hang-specific bitmap as a signal of uniqueness. In "dumb" mode, we
+//         just keep everything. */
+//
+//      total_tmouts++;
+//
+//      if (unique_hangs >= KEEP_UNIQUE_HANG) return keeping;
+//
+//      if (!dumb_mode) {
+//
+//#ifdef __x86_64__
+//        simplify_trace((u64*)trace_bits);
+//#else
+//        simplify_trace((u32*)trace_bits);
+//#endif /* ^__x86_64__ */
+//
+//        if (!has_new_bits(virgin_tmout, true)) return keeping;
+//
+//      }
+//
+//      unique_tmouts++;
+//
+//      /* Before saving, we make sure that it's a genuine hang by re-running
+//         the target with a more generous timeout (unless the default timeout
+//         is already generous). */
+//
+//      if (exec_tmout < hang_tmout) {
+//
+//        u8 new_fault;
+//        write_to_testcase(mem, len);
+//        new_fault = run_target(argv, hang_tmout);
+//
+//        /* A corner case that one user reported bumping into: increasing the
+//           timeout actually uncovers a crash. Make sure we don't discard it if
+//           so. */
+//
+//        if (!stop_soon && new_fault == FAULT_CRASH) goto keep_as_crash;
+//
+//        if (stop_soon || new_fault != FAULT_TMOUT) return keeping;
+//
+//      }
+//
+//#ifndef SIMPLE_FILES
+//
+//      fn = alloc_printf("%s/hangs/id:%06llu,%s", out_dir,
+//                        unique_hangs, describe_op(0));
+//
+//#else
+//
+//      fn = alloc_printf("%s/hangs/id_%06llu", out_dir,
+//                        unique_hangs);
+//
+//#endif /* ^!SIMPLE_FILES */
+//
+//      unique_hangs++;
+//
+//      last_hang_time = get_cur_time();
+//
+//      break;
+//
+//    case FAULT_CRASH:
+//
+//keep_as_crash:
+//
+//      /* This is handled in a manner roughly similar to timeouts,
+//         except for slightly different limits and no need to re-run test
+//         cases. */
+//
+//      total_crashes++;
+//
+//      if (unique_crashes >= KEEP_UNIQUE_CRASH) return keeping;
+//
+//      if (!dumb_mode) {
+//
+//#ifndef COVERAGE_ONLY_LLVM
+//#ifdef __x86_64__
+//        simplify_trace((u64*)trace_bits);
+//#else
+//        simplify_trace((u32*)trace_bits);
+//#endif /* ^__x86_64__ */
+//#endif
+//
+//				if (!has_new_bits(virgin_crash, false)) return keeping;
+//
+//				globally_sync(true);
+//        if (!has_new_bits(virgin_crash, true)) return keeping;
+//      }
+//
+//      if (!unique_crashes) write_crash_readme();
+//
+//#ifndef SIMPLE_FILES
+//
+//      fn = alloc_printf("%s/crashes/id:%06llu_sig:%02u_%s.js", out_dir,
+//                        unique_crashes, kill_signal, describe_op(0));
+//
+//#else
+//
+//      fn = alloc_printf("%s/crashes/id_%06llu_%02u.js", out_dir, unique_crashes,
+//                        kill_signal);
+//
+//#endif /* ^!SIMPLE_FILES */
+//
+//      unique_crashes++;
+//
+//      last_crash_time = get_cur_time();
+//      last_crash_execs = total_execs;
+//
+//      break;
+//
+//    case FAULT_ERROR: FATAL("Unable to execute target application");
+//
+//    default: return keeping;
+//
+//  }
+//
+//  /* If we're here, we apparently want to save the crash or hang
+//     test case, too. */
+//
+//  fd = open(fn, O_WRONLY | O_CREAT | O_EXCL, 0600);
+//  if (fd < 0) PFATAL("Unable to create '%s'", fn);
+//  ck_write(fd, mem, len, fn);
+//  close(fd);
+//
+//  if (fault == FAULT_CRASH) {
+//    write_coverage_diff();
+//    // Insert a crash to redis server
+//    cmdline = alloc_printf("node %s/../TS/redis_ctrl.js"
+//        " insertCrash %s %s/.cov_diff",
+//        own_loc, current_fn, out_dir);
+//
+//    execute_sh(cmdline);
+//  }
+//
+//  ck_free(fn);
+//
+//  return keeping;
+
+}
+
+static inline u8 has_new_bits(u8* virgin_map, bool update) {
   new_bits_num = 0;
   u32 j;
 
@@ -3336,6 +3541,12 @@ static u8 save_if_interesting(char** argv, void* mem, u32 len, u8 fault) {
   s32 fd;
   u8  keeping = 0;//, res;
 
+#ifdef IS_OLIVINE
+  if (save_if_new_optset(argv, mem, len, fault)) {
+      return 1;
+  }
+#endif // IS_OLIVINE
+
   if (fault == crash_mode) {
 
     /* Keep only if there are new bits in the map, add to queue for
@@ -4849,8 +5060,6 @@ abort_trimming:
    a helper function for fuzz_one(). */
 
 EXP_ST u8 common_fuzz_stuff(char** argv, u8* out_buf, u32 len) {
-  fprintf(stderr, "common_fuzz_stuff start\n");
-
   u8 fault;
 
   if (post_handler) {
@@ -4864,9 +5073,9 @@ EXP_ST u8 common_fuzz_stuff(char** argv, u8* out_buf, u32 len) {
 
 // Save all fuzz inputs from actual fuzzing
 #ifdef OLIVINE_COMMON
-  fuzz_input_ctr++;
+  fuzz_input_generation_ctr++;
   if (!in_dir) {
-    u8 *fn = alloc_printf("%s/all_inputs/%06d.js", out_dir, fuzz_input_ctr);
+    u8 *fn = alloc_printf("%s/all_inputs/%06d.js", out_dir, fuzz_input_generation_ctr);
     int fd = open(fn, O_WRONLY | O_CREAT, 0600);
     ck_free(fn);
 
@@ -4905,7 +5114,11 @@ EXP_ST u8 common_fuzz_stuff(char** argv, u8* out_buf, u32 len) {
 
   /* This handles FAULT_ERROR for us: */
 
+#ifdef IS_OLIVINE
+  u8 xxx = save_if_new_optset(argv, out_buf, len, fault);
+#else // IS_OLIVINE
   u8 xxx = save_if_interesting(argv, out_buf, len, fault);
+#endif // IS_OLIVINE
   /*if (xxx == 0) {*/
   /*  fprintf(stderr, "\n\nNOT INTERESTING\n\n");*/
   /*} else {*/
@@ -6943,6 +7156,10 @@ static s32 fuzz_dir(char* input_dir, char** argv) {
     PFATAL("Unable to open '%s'", input_dir);
 
   for (i = 0; i < nl_cnt; i++) {
+#ifdef OLIVINE_COMMON
+    ACTF("-- fuzz_dir (round %d, %d/%d) [%d to generate] --", fuzz_js_ctr, i + 1, nl_cnt, fuzz_inputs_to_generate);
+#endif // OLIVINE_COMMON
+
     u64 start_us, stop_us, exec_us;
     struct stat st;
 
@@ -6991,7 +7208,6 @@ static s32 fuzz_dir(char* input_dir, char** argv) {
 
     start_us = get_cur_time_us();
     //write_to_testcase(mem, len);
-    fprintf(stderr, "fuzz_dir calls common_fuzz_stuff\n");
     common_fuzz_stuff(argv, mem, len);
     stop_us = get_cur_time_us();
     exec_us = stop_us - start_us;
@@ -7072,7 +7288,7 @@ static u8 fuzz_js(char** argv) {
   nl_cnt = fuzz_dir(fuzz_inputs_dir, argv);
   fuzz_time = get_cur_time() - fuzz_time;
 
-  if (fuzz_inputs_to_generate != 0 && fuzz_input_ctr >= fuzz_inputs_to_generate) {
+  if (fuzz_inputs_to_generate != 0 && fuzz_input_generation_ctr >= fuzz_inputs_to_generate) {
     fprintf(stderr, "[NOTICE] Stopping due to %d inputs reached...\n", fuzz_inputs_to_generate);
     stop_soon = 2;
   }
