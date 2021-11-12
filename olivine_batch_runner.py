@@ -43,7 +43,7 @@ def get_fuzz_target_path(jit_compiler_code: str):
         assert False, f'Invalid JIT compiler code: {jit_compiler_code}'
 
 
-def run_windowed_slaves_in_current_session(cmd: str, session_name: str, prefix: str, persist: bool):
+def run_windowed_slaves_in_current_session(cmd: str, prefix: str, persist: bool):
     slave_count = multiprocessing.cpu_count()
 
     # Start from 01
@@ -80,7 +80,7 @@ def populate(jit_compiler_code: str, until_n_inputs: int, seed: int):
         f'python3 ~/die/olivine_batch_runner.py populate-with-slave {{SLAVENUMBER}} {jit_compiler_code} {seed} {until_n_inputs}',
     ]
 
-    run_windowed_slaves_in_current_session(' ; '.join(cmd), 'populate', 'populate', False)
+    run_windowed_slaves_in_current_session(' ; '.join(cmd), 'populate', False)
 
 
 def populate_with_slave(n: str, fuzz_target_path: str, jit_compiler_code: str, until_n_inputs: int, seed: int):
@@ -102,7 +102,7 @@ def fuzz(jit_compiler_code: str, until_n_inputs: int, seed: int):
         f'bash -c "{{{{ time python3 ~/die/olivine_slave_analysis.py coverage {{SLAVENUMBER}} {jit_compiler_code} ; }}}} 2> >(tee ~/die/output/time-analyze-coverage.txt >&2)"',
     ]
 
-    run_windowed_slaves_in_current_session(' ; '.join(cmd), 'fuzz', 'fuzz', True)
+    run_windowed_slaves_in_current_session(' ; '.join(cmd), 'fuzz', True)
 
 
 def main():
