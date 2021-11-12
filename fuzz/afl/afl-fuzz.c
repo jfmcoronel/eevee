@@ -7195,7 +7195,8 @@ static s32 fuzz_dir(char* input_dir, char** argv) {
     if (in_dir) {
         ACTF("-- fuzz_dir (corpus file %d/%d; seed input %d) --", i + 1, nl_cnt, actual_js_ctr);
     } else {
-        ACTF("-- fuzz_dir (round %d, %d/%d; actual %d) [%d to generate] --", fuzz_js_ctr, i + 1, nl_cnt, actual_js_ctr, fuzz_inputs_to_generate);
+        // Counter is incremented in common_fuzz_stuff which is called after this
+        ACTF("-- fuzz_dir (round %d, %d/%d; actual %d, total %d) [%d to generate] %s --", fuzz_js_ctr, i + 1, nl_cnt, actual_js_ctr, fuzz_input_generation_ctr + 1, fuzz_inputs_to_generate, fn);
     }
 #endif // OLIVINE_COMMON
 
