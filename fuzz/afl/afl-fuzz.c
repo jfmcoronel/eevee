@@ -5073,8 +5073,8 @@ EXP_ST u8 common_fuzz_stuff(char** argv, u8* out_buf, u32 len) {
 #ifdef OLIVINE_COMMON
   fuzz_input_generation_ctr++;
 
-  char *all_inputs = "%s/@all_inputs/%08d.js";
-  char *seed_inputs = "%s/@seed_inputs/%08d.js";
+  char *all_inputs = "@all_inputs";
+  char *seed_inputs = "@seed_inputs";
   char *path = NULL;
 
   if (in_dir) {

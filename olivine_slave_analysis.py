@@ -128,7 +128,8 @@ def main():
             # Cannot be parallelized yet
             # Must wait for all slaves to finish
             execute(f'tmux rename-window -t done-{n} coverage-{n}')
-            wait_until_tmux_windows_closed('optset', 60)
+            wait_until_tmux_windows_closed('fuzz', 20)
+            wait_until_tmux_windows_closed('optset', 20)
 
             # TODO: Parallelize
             generate_serial_coverage(metrics_info)
