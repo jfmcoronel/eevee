@@ -1,4 +1,5 @@
 import glob
+import multiprocessing
 import os
 import sys
 import time
@@ -83,9 +84,8 @@ def generate_optsets(n: str, metrics_info: MetricsInfo):
         execute(actual_cmd)
 
 
-def generate_coverage(n: str, metrics_info: MetricsInfo):
-    output_basepath = f'~/die/output-{n}/@coverage'
-    fuzz_input_basepath = f'/home/jfmcoronel/die/output-{n}/all_inputs/*.js'
+def generate_serial_coverage(metrics_info: MetricsInfo):
+    output_basepath = f'~/die/output-summary/'
 
     cmd_before: list[str] = [
         f'rm -rf {output_basepath}',
@@ -94,9 +94,14 @@ def generate_coverage(n: str, metrics_info: MetricsInfo):
     ]
     execute(' ; '.join(cmd_before))
 
-    for full_js_path in sorted(glob.glob(fuzz_input_basepath)):
-        actual_cmd = f'timeout {TIMEOUT} {metrics_info.fuzz_target_path} {full_js_path}'
-        execute(actual_cmd)
+    for n in range(1, multiprocessing.cpu_count()):
+        n = str(n).zfill(2)
+
+        fuzz_input_basepath = f'/home/jfmcoronel/die/output-{n}/all_inputs/*.js'
+
+        for full_js_path in sorted(glob.glob(fuzz_input_basepath)):
+            actual_cmd = f'timeout {TIMEOUT} {metrics_info.fuzz_target_path} {full_js_path}'
+            execute(actual_cmd)
 
     lcovinfo_path = os.path.join(output_basepath, '.lcovinfo')
 
@@ -125,9 +130,10 @@ def main():
             execute(f'tmux rename-window -t done-{n} coverage-{n}')
             wait_until_tmux_windows_closed('optset', 60)
 
-            generate_coverage(n, metrics_info)
+            # TODO: Parallelize
+            generate_serial_coverage(metrics_info)
 
-        execute(f'tmux rename-window -t coverage-{n} done-{n}')
+            execute(f'tmux rename-window -t coverage-{n} done-{n}')
     else:
         assert False, f'Invalid arguments: {sys.argv}'
 
