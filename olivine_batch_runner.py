@@ -104,8 +104,8 @@ def fuzz(jit_compiler_code: str, until_n_inputs: int, seed: int):
     cmd: List[str] = [
         'cd ~/die',
         f'''bash -c "{{{{ time ./fuzz/afl/afl-fuzz -s {seed} -e {until_n_inputs} -j {jit_compiler_code} -m none -o output '{fuzz_target_path}' {lib_string} @@ ; }}}} 2> >(tee ~/die/output/time-fuzz.txt {bash_log_all_output}) {bash_log_all_output}"''',
-        f'bash -c "{{{{ time python3 ~/die/olivine_slave_analysis.py optset {{SLAVENUMBER}} {jit_compiler_code} ; }}}} 2> >(tee ~/die/output/time-analyze-optset.txt {bash_log_all_output}) {bash_log_all_output}"',
-        f'bash -c "{{{{ time python3 ~/die/olivine_slave_analysis.py coverage {{SLAVENUMBER}} {jit_compiler_code} ; }}}} 2> >(tee ~/die/output/time-analyze-coverage.txt {bash_log_all_output}) {bash_log_all_output}"',
+        f'bash -c "{{{{ time python3 ~/die/olivine_slave_analysis.py optset {{SLAVENUMBER}} {jit_compiler_code} ; }}}} 2> >(tee ~/die/output/time-analyze-optset.txt >&2) >&2"',
+        f'bash -c "{{{{ time python3 ~/die/olivine_slave_analysis.py coverage {{SLAVENUMBER}} {jit_compiler_code} ; }}}} 2> >(tee ~/die/output/time-analyze-coverage.txt >&2) >&2"',
     ]
 
     run_windowed_slaves_in_current_session(' ; '.join(cmd), 'fuzz', True)
