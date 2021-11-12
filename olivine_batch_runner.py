@@ -85,7 +85,7 @@ def populate(jit_compiler_code: str, until_n_inputs: int, seed: int):
 def populate_with_slave(n: str, fuzz_target_path: str, jit_compiler_code: str, until_n_inputs: int, seed: int):
     lib_string = get_lib_string(jit_compiler_code)
 
-    execute(f'{{{{ time ./fuzz/afl/afl-fuzz -s {seed} -e {until_n_inputs} -m none -o output-{n} -i ./corpus/output-{n} "{fuzz_target_path}" {lib_string} @@ ; }}}} 2> >(tee ~/die/output/time-populate.txt >&2)')
+    execute(f'{{ time ./fuzz/afl/afl-fuzz -s {seed} -e {until_n_inputs} -m none -o output-{n} -i ./corpus/output-{n} "{fuzz_target_path}" {lib_string} @@ ; }} 2> >(tee ~/die/output/time-populate.txt >&2)')
 
 
 def fuzz(jit_compiler_code: str, until_n_inputs: int, seed: int):
