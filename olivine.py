@@ -132,15 +132,15 @@ else:
 
 # Execute JIT compiler for feedback
 print(jit_compiler_feedback_cmd)
-# os.system(jit_compiler_feedback_cmd)
+os.system(jit_compiler_feedback_cmd)
 
-# with open(jit_compiler_feedback_filepath, "r") as f:
-#     lines = f.readlines()
+with open(jit_compiler_feedback_filepath, "r") as f:
+    lines = f.readlines()
 
-# key = key_fn(lines)
+key = '@@@' + key_fn(lines)
 
-# r = redis.Redis(host='localhost', port=6379, db=0)
-# count = r.incr('olivine', 1)
+r = redis.Redis(host='localhost', port=6379, db=0)
+count = r.incr(key, 1)
 
-# with open(jit_compiler_feedback_cmd, 'wb') as f:
-#     f.write(count.to_bytes(8, 'little'))
+with open(jit_compiler_feedback_cmd, 'wb') as f:
+    f.write(count.to_bytes(8, 'little'))
