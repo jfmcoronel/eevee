@@ -17,7 +17,7 @@ current_fuzz_input_filepath = os.path.join(output_basepath, ".cur_input")
 
 
 def get_jsc_key(lines: List[str]):
-    ctr = Counter[str]()
+    ctr = Counter()  # type: Counter[str]
 
     for line in lines:
         line = line.strip()
@@ -33,7 +33,7 @@ def get_jsc_key(lines: List[str]):
 
 
 def get_v8_key(lines: List[str]):
-    ctr = Counter[str]()
+    ctr = Counter()  # type: Counter[str]
 
     for line in lines:
         reducer = line.rsplit(' ', maxsplit=1)[-1].strip()
@@ -55,7 +55,7 @@ def get_ch_key(lines: List[str]):
     b = None
     b_count = None
 
-    ctr = Counter[str]()
+    ctr = Counter()  # type: Counter[str]
 
     for line in lines:
         if 'IR after' in line:
@@ -140,7 +140,7 @@ with open(jit_compiler_feedback_filepath, "r") as f:
 
 key = '@@@' + key_fn(lines)
 
-r = redis.Redis(host='localhost', port=6379, db=0)
+r = redis.Redis(host='localhost', port=9000, db=0)
 count = r.incr(key, 1)
 
 with open(jit_compiler_feedback_cmd, 'wb') as f:
