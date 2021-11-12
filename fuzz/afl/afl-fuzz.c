@@ -5121,11 +5121,7 @@ EXP_ST u8 common_fuzz_stuff(char** argv, u8* out_buf, u32 len) {
 
   /* This handles FAULT_ERROR for us: */
 
-#ifdef IS_OLIVINE
-  u8 xxx = save_if_new_optset(argv, out_buf, len, fault);
-#else // IS_OLIVINE
   u8 xxx = save_if_interesting(argv, out_buf, len, fault);
-#endif // IS_OLIVINE
   /*if (xxx == 0) {*/
   /*  fprintf(stderr, "\n\nNOT INTERESTING\n\n");*/
   /*} else {*/
