@@ -1,6 +1,7 @@
 from collections import Counter
 import os
 import sys
+from typing import List
 
 import redis
 
@@ -15,7 +16,7 @@ jit_compiler_feedback_filepath = sys.argv[2]
 current_fuzz_input_filepath = os.path.join(output_basepath, ".cur_input")
 
 
-def get_jsc_key(lines: list[str]):
+def get_jsc_key(lines: List[str]):
     ctr = Counter[str]()
 
     for line in lines:
@@ -23,7 +24,7 @@ def get_jsc_key(lines: list[str]):
         if "changed the IR" in line:
             ctr[line] += 1
 
-    key_parts: list[str] = []
+    key_parts: List[str] = []
     for key in ctr:
         new_key = key.replace("Phase ", "").replace(" changed the IR.", "").replace(" ", "")
         key_parts.append(f"{new_key}{ctr[key]}")
@@ -31,14 +32,14 @@ def get_jsc_key(lines: list[str]):
     return "".join(key_parts)
 
 
-def get_v8_key(lines: list[str]):
+def get_v8_key(lines: List[str]):
     ctr = Counter[str]()
 
     for line in lines:
         reducer = line.rsplit(' ', maxsplit=1)[-1].strip()
         ctr[reducer] += 1
 
-    key_parts: list[str] = []
+    key_parts: List[str] = []
     for key in ctr:
         key = key.strip().rsplit(' ', maxsplit=1)[-1].strip()
         key_parts.append(f"{key}{ctr[key]}")
@@ -46,7 +47,7 @@ def get_v8_key(lines: list[str]):
     return "".join(key_parts)
 
 
-def get_ch_key(lines: list[str]):
+def get_ch_key(lines: List[str]):
     ignore_phases = ('Emitter', 'BackEnd')
 
     a = None
