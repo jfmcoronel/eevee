@@ -7159,14 +7159,6 @@ static s32 fuzz_dir(char* input_dir, char** argv) {
 #endif // OLIVINE_COMMON
 
   for (i = 0; i < nl_cnt; i++) {
-#ifdef OLIVINE_COMMON
-    if (in_dir) {
-        ACTF("-- fuzz_dir (seed input %d/%d; actual %d) --", i + 1, nl_cnt, actual_js_ctr);
-    } else {
-        ACTF("-- fuzz_dir (round %d, %d/%d; actual %d) [%d to generate] --", fuzz_js_ctr, i + 1, nl_cnt, actual_js_ctr, fuzz_inputs_to_generate);
-    }
-#endif // OLIVINE_COMMON
-
     u64 start_us, stop_us, exec_us;
     struct stat st;
 
@@ -7199,6 +7191,12 @@ static s32 fuzz_dir(char* input_dir, char** argv) {
 
 #ifdef OLIVINE_COMMON
     actual_js_ctr++;
+
+    if (in_dir) {
+        ACTF("-- fuzz_dir (corpus file %d/%d; seed input %d) --", i + 1, nl_cnt, actual_js_ctr);
+    } else {
+        ACTF("-- fuzz_dir (round %d, %d/%d; actual %d) [%d to generate] --", fuzz_js_ctr, i + 1, nl_cnt, actual_js_ctr, fuzz_inputs_to_generate);
+    }
 #endif // OLIVINE_COMMON
 
     fd = open(fn, O_RDONLY);
