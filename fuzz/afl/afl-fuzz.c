@@ -3541,9 +3541,12 @@ static u8 save_if_interesting(char** argv, void* mem, u32 len, u8 fault) {
   u8  keeping = 0;//, res;
 
 #ifdef IS_OLIVINE
-  if (save_if_new_optset(argv, mem, len, fault)) {
+  // Valid only during actual fuzzing
+  if (!in_dir) {
+    if (save_if_new_optset(argv, mem, len, fault)) {
       ACTF("Olivine: New optset found");
       return 1;
+    }
   }
 #endif // IS_OLIVINE
 
