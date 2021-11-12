@@ -5074,7 +5074,7 @@ EXP_ST u8 common_fuzz_stuff(char** argv, u8* out_buf, u32 len) {
 #ifdef OLIVINE_COMMON
   fuzz_input_generation_ctr++;
   if (!in_dir) {
-    u8 *fn = alloc_printf("%s/all_inputs/%06d.js", out_dir, fuzz_input_generation_ctr);
+    u8 *fn = alloc_printf("%s/all_inputs/%08d.js", out_dir, fuzz_input_generation_ctr);
     int fd = open(fn, O_WRONLY | O_CREAT, 0600);
     ck_free(fn);
 
