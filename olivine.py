@@ -143,5 +143,5 @@ key = '@@@' + key_fn(lines)
 r = redis.Redis(host='localhost', port=6379, db=0)
 count = r.incr(key, 1)
 
-with open(jit_compiler_feedback_cmd, 'wb') as f:
+with open(jit_compiler_feedback_filepath, 'wb') as f:
     f.write(count.to_bytes(8, 'little'))
