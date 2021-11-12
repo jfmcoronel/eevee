@@ -140,7 +140,7 @@ with open(jit_compiler_feedback_filepath, "r") as f:
 
 key = '@@@' + key_fn(lines)
 
-r = redis.Redis(host='localhost', port=9000, db=0)
+r = redis.Redis(host='localhost', port=6379, db=0)
 count = r.incr(key, 1)
 
 with open(jit_compiler_feedback_cmd, 'wb') as f:
