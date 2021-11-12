@@ -52,7 +52,7 @@ def main():
                 splits[j].append(files[i + j])
 
     for i, per_cpu_files in enumerate(splits):
-        per_cpu_dir = os.path.join(args. output_dir, 'output-%d' % i)
+        per_cpu_dir = os.path.join(args. output_dir, f'output-{str(i).zfill(2)}')
         os.makedirs(per_cpu_dir)
         for j, f in enumerate(per_cpu_files):
             shutil.copy(f, os.path.join(per_cpu_dir, "%06d-corpus.js") % j)
