@@ -1,6 +1,7 @@
 import glob
 import os
 import sys
+import time
 from typing import Dict, NamedTuple
 
 
@@ -38,6 +39,16 @@ metrics_info_mapping: Dict[str, MetricsInfo] = {
     'v8': v8_metrics_info,
     'ch': ch_metrics_info,
 }
+
+
+def wait_until_tmux_windows_closed(window_name: str, interval: int = 60):
+    while True:
+        time.sleep(interval)
+        output = os.popen('tmux lsw').read()
+        print(output)
+
+        if window_name not in output:
+            break
 
 
 def get_metrics_info(jit_compiler_code: str) -> MetricsInfo:
@@ -104,14 +115,18 @@ def main():
     if cmd == 'optset':
         execute(f'tmux rename-window optset-{n}')
         generate_optsets(n, metrics_info)
-        execute(f'tmux rename-window done-coverage-{n}')
+        execute(f'tmux rename-window done-{n}')
+
     elif cmd == 'coverage':
         if n_num == 1:
             # Cannot be parallelized yet
+            # Must wait for all slaves to finish
             execute(f'tmux rename-window coverage-{n}')
+            wait_until_tmux_windows_closed('optset', 60)
+
             generate_coverage(n, metrics_info)
 
-        execute(f'tmux rename-window done-coverage-{n}')
+        execute(f'tmux rename-window done-{n}')
     else:
         assert False, f'Invalid arguments: {sys.argv}'
 

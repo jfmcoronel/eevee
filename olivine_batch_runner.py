@@ -8,8 +8,6 @@ import time
 # python3 olivine_batch_runner.py populate {jitCompilerCode} {seed} {untilNInputs}
 # python3 olivine_batch_runner.py fuzz {jitCompilerCode} {seed} {untilNInputs}
 
-# TODO: Timing
-
 def execute(cmd: str):
     print(cmd)
     os.system(cmd)
@@ -21,6 +19,16 @@ def get_lib_string(jit_compiler_code: str):
         return f'-lib={die_corpus_path}/lib.js -lib={die_corpus_path}/jsc.js -lib={die_corpus_path}/v8.js -lib={die_corpus_path}/ffx.js -lib={die_corpus_path}/chakra.js'
 
     return f'{die_corpus_path}/lib.js {die_corpus_path}/jsc.js {die_corpus_path}/v8.js {die_corpus_path}/ffx.js {die_corpus_path}/chakra.js'
+
+
+def wait_until_tmux_session_closed(session_name: str, interval: int = 60):
+    while True:
+        time.sleep(interval)
+        output = os.popen('tmux ls').read()
+        print(output)
+
+        if session_name not in output:
+            break
 
 
 def get_fuzz_target_path(jit_compiler_code: str):
@@ -46,9 +54,9 @@ def run_slaves(cmd: str, prefix: str, persist: bool):
         print(new_cmd)
 
         if persist:
-            execute(f'tmux new-window -n {prefix}-{n} "{new_cmd}; /bin/bash"')
+            execute(f'tmux new-session -n {prefix}-{n} "{new_cmd}; /bin/bash"')
         else:
-            execute(f'tmux new-window -n {prefix}-{n} "{new_cmd}"')
+            execute(f'tmux new-session -n {prefix}-{n} "{new_cmd}"')
 
 
 def start(jit_compiler_code: str, until_n_inputs: int, seed: int):
@@ -56,13 +64,7 @@ def start(jit_compiler_code: str, until_n_inputs: int, seed: int):
     execute(cmd)
 
     # Must wait for all slaves to finish
-    while True:
-        time.sleep(60)
-        output = os.popen('tmux ls').read()
-        print(output)
-
-        if 'populate' not in output:
-            break
+    wait_until_tmux_session_closed('populate', 60)
 
     cmd = f'tmux new-session -s fuzz -d "python3 ~/die/olivine_batch_runner.py fuzz {jit_compiler_code} {seed} {until_n_inputs}"'
     execute(cmd)
