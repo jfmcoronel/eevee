@@ -1286,7 +1286,6 @@ static inline u8 has_new_bits(u8* virgin_map, bool update) {
 
   if (ret && virgin_map == virgin_bits) bitmap_changed = 1;
 
-  fprintf(stderr, "-- END --\n");
   return ret;
 }
 
@@ -7155,9 +7154,17 @@ static s32 fuzz_dir(char* input_dir, char** argv) {
   if (nl_cnt < 0)
     PFATAL("Unable to open '%s'", input_dir);
 
+#ifdef OLIVINE_COMMON
+  int actual_js_ctr = 0;
+#endif // OLIVINE_COMMON
+
   for (i = 0; i < nl_cnt; i++) {
 #ifdef OLIVINE_COMMON
-    ACTF("-- fuzz_dir (round %d, %d/%d) [%d to generate] --", fuzz_js_ctr, i + 1, nl_cnt, fuzz_inputs_to_generate);
+    if (in_dir) {
+        ACTF("-- fuzz_dir (seed input %d/%d; actual %d) --", i + 1, nl_cnt, actual_js_ctr);
+    } else {
+        ACTF("-- fuzz_dir (round %d, %d/%d; actual %d) [%d to generate] --", fuzz_js_ctr, i + 1, nl_cnt, actual_js_ctr, fuzz_inputs_to_generate);
+    }
 #endif // OLIVINE_COMMON
 
     u64 start_us, stop_us, exec_us;
@@ -7189,6 +7196,10 @@ static s32 fuzz_dir(char* input_dir, char** argv) {
       continue;
 
     }
+
+#ifdef OLIVINE_COMMON
+    actual_js_ctr++;
+#endif // OLIVINE_COMMON
 
     fd = open(fn, O_RDONLY);
     len = st.st_size;
@@ -7288,10 +7299,13 @@ static u8 fuzz_js(char** argv) {
   nl_cnt = fuzz_dir(fuzz_inputs_dir, argv);
   fuzz_time = get_cur_time() - fuzz_time;
 
-  if (fuzz_inputs_to_generate != 0 && fuzz_input_generation_ctr >= fuzz_inputs_to_generate) {
-    fprintf(stderr, "[NOTICE] Stopping due to %d inputs reached...\n", fuzz_inputs_to_generate);
+#ifdef OLIVINE_COMMON
+  // Should not terminate corpus dry run
+  if (!in_dir && fuzz_inputs_to_generate != 0 && fuzz_input_generation_ctr >= fuzz_inputs_to_generate) {
+    ACTF("Stopping due to %d inputs reached...", fuzz_inputs_to_generate);
     stop_soon = 2;
   }
+#endif // OLIVINE_COMMON
 
   ACTF("Time - Generation: %0.02f ea/s, Execution: %0.02f ea/s\n",
       (double)(nl_cnt) / (gen_time / 1000),
