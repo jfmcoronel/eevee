@@ -5070,21 +5070,29 @@ EXP_ST u8 common_fuzz_stuff(char** argv, u8* out_buf, u32 len) {
 
   write_to_testcase(out_buf, len);
 
-// Save all fuzz inputs from actual fuzzing
 #ifdef OLIVINE_COMMON
   fuzz_input_generation_ctr++;
-  if (!in_dir) {
-    u8 *fn = alloc_printf("%s/all_inputs/%08d.js", out_dir, fuzz_input_generation_ctr);
-    int fd = open(fn, O_WRONLY | O_CREAT, 0600);
-    ck_free(fn);
 
-    FILE *fp = fdopen(fd, "w");
-    if (!fp) PFATAL("fdopen() failed");
-    fprintf(fp, "%s", out_buf);
+  char *all_inputs = "%s/@all_inputs/%08d.js";
+  char *seed_inputs = "%s/@seed_inputs/%08d.js";
+  char *path = NULL;
 
-    fclose(fp);
-    close(fd);
+  if (in_dir) {
+    path = seed_inputs;
+  } else {
+    path = all_inputs;
   }
+
+  u8 *fn = alloc_printf("%s/%s/%08d.js", out_dir, path, fuzz_input_generation_ctr);
+  int fd = open(fn, O_WRONLY | O_CREAT, 0600);
+  ck_free(fn);
+
+  FILE *fp = fdopen(fd, "w");
+  if (!fp) PFATAL("fdopen() failed");
+  fprintf(fp, "%s", out_buf);
+
+  fclose(fp);
+  close(fd);
 #endif
 
   fault = run_target(argv, exec_tmout);
@@ -7904,7 +7912,11 @@ EXP_ST void setup_dirs_fds(void) {
 
 // All fuzz inputs
 #ifdef OLIVINE_COMMON
-  tmp = alloc_printf("%s/all_inputs", out_dir);
+  tmp = alloc_printf("%s/@all_inputs", out_dir);
+  if (mkdir(tmp, 0700) && errno != EEXIST) PFATAL("Unable to create '%s'", tmp);
+  ck_free(tmp);
+
+  tmp = alloc_printf("%s/@seed_inputs", out_dir);
   if (mkdir(tmp, 0700) && errno != EEXIST) PFATAL("Unable to create '%s'", tmp);
   ck_free(tmp);
 #endif
