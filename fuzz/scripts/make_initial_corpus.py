@@ -51,7 +51,7 @@ def main():
             if i + j < len(files):
                 splits[j].append(files[i + j])
 
-    for i, per_cpu_files in enumerate(splits):
+    for i, per_cpu_files in enumerate(splits, start=1):
         per_cpu_dir = os.path.join(args. output_dir, f'output-{str(i).zfill(2)}')
         os.makedirs(per_cpu_dir)
         for j, f in enumerate(per_cpu_files):
