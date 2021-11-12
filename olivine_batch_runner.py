@@ -78,7 +78,7 @@ def populate(fuzz_target_path: str, jit_compiler_code: str, until_n_inputs: int,
     cmd: list[str] = [
         'sudo bash -c "echo core >/proc/sys/kernel/core_pattern"',
         f'cd ~/die && rm -rf ~/die/output',
-        f'{{ time ./fuzz/afl/afl-fuzz -s {seed} -e {until_n_inputs} -m none -o output -i ./corpus/output "{fuzz_target_path}" {lib_string} @@ ; }} 2> >(tee ~/die/output/time-populate.txt >&2)',
+        f'{{{{ time ./fuzz/afl/afl-fuzz -s {seed} -e {until_n_inputs} -m none -o output -i ./corpus/output "{fuzz_target_path}" {lib_string} @@ ; }}}} 2> >(tee ~/die/output/time-populate.txt >&2)',
     ]
 
     run_slaves(' ; '.join(cmd), 'populate', False)
