@@ -3,7 +3,7 @@ import multiprocessing
 import os
 import sys
 import time
-from typing import Dict, NamedTuple
+from typing import Dict, List, NamedTuple
 
 
 # Usage:
@@ -66,7 +66,7 @@ def generate_optsets(n: str, metrics_info: MetricsInfo):
     output_basepath = f'~/die/output-{n}/@optset'
     fuzz_input_basepath = f'/home/jfmcoronel/die/output-{n}/@all_inputs/*.js'
 
-    cmd: list[str] = [
+    cmd: List[str] = [
         f'rm -rf {output_basepath}',
         f'mkdir {output_basepath}',
         f'cd {output_basepath}',
@@ -87,7 +87,7 @@ def generate_optsets(n: str, metrics_info: MetricsInfo):
 def generate_serial_coverage(metrics_info: MetricsInfo):
     output_basepath = f'~/die/output-summary/'
 
-    cmd_before: list[str] = [
+    cmd_before: List[str] = [
         f'rm -rf {output_basepath}',
         f'mkdir {output_basepath}',
         f'cd {output_basepath}',
@@ -105,7 +105,7 @@ def generate_serial_coverage(metrics_info: MetricsInfo):
 
     lcovinfo_path = os.path.join(output_basepath, '.lcovinfo')
 
-    cmd_after: list[str] = [
+    cmd_after: List[str] = [
         f'cd {metrics_info.cov_source_code_path}',
         f'/usr/bin/lcov --capture --no-checksum --directory {metrics_info.cov_source_code_path} --output-file {lcovinfo_path} --gcov-tool ~/gcov_for_clang.sh',
         f'genhtml {lcovinfo_path} --output-directory {output_basepath} --ignore-errors=source',

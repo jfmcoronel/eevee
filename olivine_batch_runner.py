@@ -2,6 +2,7 @@ import multiprocessing
 import os
 import sys
 import time
+from typing import List
 
 LOG_ALL_OUTPUT = False
 
@@ -79,7 +80,7 @@ def populate(jit_compiler_code: str, until_n_inputs: int, seed: int):
     execute(f'cd ~/die && rm -rf ~/die/corpus/ && python3 ./fuzz/scripts/make_initial_corpus.py ./DIE-corpus ./corpus')
     execute('echo core | sudo tee /proc/sys/kernel/core_pattern')
 
-    cmd: list[str] = [
+    cmd: List[str] = [
         f'cd ~/die && rm -rf ~/die/output',
         f'mkdir ~/die/output',
         f'python3 ~/die/olivine_batch_runner.py populate-with-slave {{SLAVENUMBER}} {jit_compiler_code} {until_n_inputs} {seed}',
@@ -100,7 +101,7 @@ def fuzz(jit_compiler_code: str, until_n_inputs: int, seed: int):
 
     execute('echo core | sudo tee /proc/sys/kernel/core_pattern')
 
-    cmd: list[str] = [
+    cmd: List[str] = [
         'cd ~/die',
         f'''bash -c "{{{{ time ./fuzz/afl/afl-fuzz -s {seed} -e {until_n_inputs} -j {jit_compiler_code} -m none -o output '{fuzz_target_path}' {lib_string} @@ ; }}}} 2> >(tee ~/die/output/time-fuzz.txt {bash_log_all_output}) {bash_log_all_output}"''',
         f'bash -c "{{{{ time python3 ~/die/olivine_slave_analysis.py optset {{SLAVENUMBER}} {jit_compiler_code} ; }}}} 2> >(tee ~/die/output/time-analyze-optset.txt {bash_log_all_output}) {bash_log_all_output}"',
