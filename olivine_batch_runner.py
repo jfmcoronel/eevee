@@ -24,12 +24,13 @@ def get_lib_string(jit_compiler_code: str):
 
 def wait_until_tmux_session_closed(session_name: str, interval: int = 60):
     while True:
-        time.sleep(interval)
         output = os.popen('tmux ls').read()
         print(output)
 
         if session_name not in output:
             break
+
+        time.sleep(interval)
 
 
 def get_fuzz_target_path(jit_compiler_code: str):

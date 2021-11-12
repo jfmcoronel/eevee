@@ -43,12 +43,13 @@ metrics_info_mapping: Dict[str, MetricsInfo] = {
 
 def wait_until_tmux_windows_closed(window_name: str, interval: int = 60):
     while True:
-        time.sleep(interval)
         output = os.popen('tmux lsw').read()
         print(output)
 
         if window_name not in output:
             break
+
+        time.sleep(interval)
 
 
 def get_metrics_info(jit_compiler_code: str) -> MetricsInfo:
