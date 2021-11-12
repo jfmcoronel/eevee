@@ -17,6 +17,7 @@ def execute(cmd: str):
     print(f'Executing: {cmd}')
     os.system(cmd)
 
+
 def get_lib_string(jit_compiler_code: str):
     die_corpus_path = '/home/jfmcoronel/die/DIE-corpus/'
 
