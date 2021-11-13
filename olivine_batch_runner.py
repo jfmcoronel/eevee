@@ -1,8 +1,16 @@
+import glob
 import multiprocessing
 import os
 import sys
-import time
 from typing import List
+
+from olivine_helpers import (
+    TIMEOUT,
+    execute,
+    get_fuzz_target_path,
+    v8_metrics_info,
+    wait_until_tmux_session_closed,
+)
 
 LOG_ALL_OUTPUT = False
 
@@ -11,12 +19,9 @@ bash_log_all_output = '>&2' if LOG_ALL_OUTPUT else ''
 # Usage:
 # python3 olivine_batch_runner.py start {jitCompilerCode} {seed} {untilNInputs}
 # python3 olivine_batch_runner.py populate {jitCompilerCode} {seed} {untilNInputs}
+# python3 olivine_batch_runner.py prune-v8-corpus {jitCompilerCode} {seed} {untilNInputs}
 # python3 olivine_batch_runner.py populate-with-slave {n} {jitCompilerCode} {seed} {untilNInputs}
 # python3 olivine_batch_runner.py fuzz {jitCompilerCode} {seed} {untilNInputs}
-
-def execute(cmd: str):
-    print(f'Executing: {cmd}')
-    os.system(cmd)
 
 
 def get_lib_string(jit_compiler_code: str):
@@ -26,28 +31,6 @@ def get_lib_string(jit_compiler_code: str):
         return f'-lib={die_corpus_path}/lib.js -lib={die_corpus_path}/jsc.js -lib={die_corpus_path}/v8.js -lib={die_corpus_path}/ffx.js -lib={die_corpus_path}/chakra.js'
 
     return f'{die_corpus_path}/lib.js {die_corpus_path}/jsc.js {die_corpus_path}/v8.js {die_corpus_path}/ffx.js {die_corpus_path}/chakra.js'
-
-
-def wait_until_tmux_session_closed(session_name: str, interval: int = 60):
-    while True:
-        output = os.popen('tmux ls').read()
-        print(output)
-
-        if session_name not in output:
-            break
-
-        time.sleep(interval)
-
-
-def get_fuzz_target_path(jit_compiler_code: str):
-    if jit_compiler_code == 'jsc':
-        return '/home/jfmcoronel/jsc'
-    elif jit_compiler_code == 'v8':
-        return '/home/jfmcoronel/v8-afl-dir/v8/out/Debug/d8'
-    elif jit_compiler_code == 'ch':
-        return '/home/jfmcoronel/ch'
-    else:
-        assert False, f'Invalid JIT compiler code: {jit_compiler_code}'
 
 
 def run_windowed_slaves_in_current_session(cmd: str, prefix: str, persist: bool):
@@ -83,10 +66,33 @@ def populate(jit_compiler_code: str, until_n_inputs: int, seed: int):
     cmd: List[str] = [
         f'cd ~/die && rm -rf ~/die/output',
         f'mkdir ~/die/output',
+        # TODO: Remove me
+        '' if jit_compiler_code != 'v8' else f'python3 ~/die/olivine_batch_runner.py prune-v8-corpus {{SLAVENUMBER}} {jit_compiler_code} {until_n_inputs} {seed}',
         f'python3 ~/die/olivine_batch_runner.py populate-with-slave {{SLAVENUMBER}} {jit_compiler_code} {until_n_inputs} {seed}',
     ]
 
     run_windowed_slaves_in_current_session(' ; '.join(cmd), 'populate', False)
+
+
+def prune_v8_corpus_with_slave(n: str):
+    js_files = sorted(glob.glob(f'/home/jfmcoronel/die/corpus/output-{n}/*.js'))
+    remaining = len(js_files)
+    dump_suffix = f'2>&1; echo $?'
+
+    for full_js_path in js_files:
+        actual_cmd = f'timeout {TIMEOUT} {v8_metrics_info.fuzz_target_path} {v8_metrics_info.optset_flags} {full_js_path} {dump_suffix}'
+        print(actual_cmd)
+
+        result = os.popen(actual_cmd).read().strip()
+        lines = result.rsplit('\n', maxsplit=1)
+        status_code = int(lines[-1])
+
+        if status_code != 0 or ' by reducer ' not in result:
+            print(f'Deleting {full_js_path} ({remaining} seeds left)')
+            os.remove(full_js_path)
+            remaining -= 1
+
+    print('Remaining seeds:', remaining)
 
 
 def populate_with_slave(n: str, fuzz_target_path: str, jit_compiler_code: str, until_n_inputs: int, seed: int):
@@ -130,6 +136,11 @@ def main():
         until_n_inputs = int(until_n_inputs)
 
         populate(jit_compiler_code, until_n_inputs, seed)
+
+    elif cmd == 'prune-v8-corpus':
+        n = sys.argv[2:]
+
+        prune_v8_corpus_with_slave(n)
 
     elif cmd == 'populate-with-slave':
         n, jit_compiler_code, until_n_inputs, seed = sys.argv[2:]

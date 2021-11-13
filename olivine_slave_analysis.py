@@ -2,65 +2,19 @@ import glob
 import multiprocessing
 import os
 import sys
-import time
-from typing import Dict, List, NamedTuple
+from typing import List
 
+from olivine_helpers import (
+    MetricsInfo,
+    TIMEOUT,
+    execute,
+    get_metrics_info,
+    wait_until_tmux_windows_closed,
+)
 
 # Usage:
 # python3 olivine_slave_analysis.py optset <n> <jit_compiler_code>
 # python3 olivine_slave_analysis.py coverage <n> <jit_compiler_code>
-
-TIMEOUT = 10
-
-
-# Python 3.6 has no dataclasses
-class MetricsInfo(NamedTuple):
-    fuzz_target_path: str
-    cov_target_path: str
-    optset_flags: str
-    cov_source_code_path: str
-
-
-v8_metrics_info = MetricsInfo(
-    fuzz_target_path='/home/jfmcoronel/v8-afl-dir/v8/out/Debug/d8',
-    cov_target_path='/home/jfmcoronel/die/engines/v8/v8/out/Debug/d8',
-    optset_flags='--trace-turbo-reduction',
-    cov_source_code_path='/home/jfmcoronel/die/engines/v8/v8/out/Debug/',
-)
-
-ch_metrics_info = MetricsInfo(
-    fuzz_target_path='/home/jfmcoronel/ch',
-    cov_target_path='/home/jfmcoronel/ch-cov-src/out/Debug/ch',
-    optset_flags='-bgjit- -dump:backend',
-    cov_source_code_path='/home/jfmcoronel/ch-cov-src/out/Debug/',
-)
-
-# Python 3.6 typing woes
-metrics_info_mapping: Dict[str, MetricsInfo] = {
-    'v8': v8_metrics_info,
-    'ch': ch_metrics_info,
-}
-
-
-def wait_until_tmux_windows_closed(window_name: str, interval: int = 60):
-    while True:
-        output = os.popen('tmux lsw').read()
-        print(output)
-
-        if window_name not in output:
-            break
-
-        time.sleep(interval)
-
-
-def get_metrics_info(jit_compiler_code: str) -> MetricsInfo:
-    return metrics_info_mapping[jit_compiler_code]
-
-
-def execute(cmd: str):
-    print(cmd)
-    os.system(cmd)
-
 
 def generate_optsets(n: str, metrics_info: MetricsInfo):
     output_basepath = f'~/die/output-{n}/@optset'
@@ -161,9 +115,11 @@ def main():
             wait_until_tmux_windows_closed('fuzz', 60)
             wait_until_tmux_windows_closed('optset', 60)
             wait_until_tmux_windows_closed('coverage', 60)
-            generate_coverage_summary(metrics_info)
+
             execute(f'tmux rename-window -t coverage-{n} summary-{n}')
+            generate_coverage_summary(metrics_info)
             execute(f'tmux rename-window -t summary-{n} done-{n}')
+
         else:
             execute(f'tmux rename-window -t coverage-{n} done-{n}')
 
