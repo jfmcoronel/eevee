@@ -99,11 +99,10 @@ bool AFLCoverage::runOnModule(Module &M) {
   GlobalVariable *AFLMapPtr =
       new GlobalVariable(M, PointerType::get(Int8Ty, 0), false,
                          GlobalValue::ExternalLinkage, 0, "__afl_area_ptr");
-#ifndef COVERAGE_ONLY_LLVM
+
   GlobalVariable *AFLPrevLoc = new GlobalVariable(
       M, Int32Ty, false, GlobalValue::ExternalLinkage, 0, "__afl_prev_loc",
       0, GlobalVariable::GeneralDynamicTLSModel, 0, false);
-#endif
 
   /* Instrument all the things! */
 
@@ -117,28 +116,6 @@ bool AFLCoverage::runOnModule(Module &M) {
 
       if (AFL_R(100) >= inst_ratio) continue;
 
-#ifdef COVERAGE_ONLY_LLVM
-      unsigned int cur_loc = AFL_R(MAP_SIZE);
-      unsigned int cur_idx = AFL_R(CHAR_BIT);
-
-      ConstantInt *CurLoc = ConstantInt::get(Int32Ty, cur_loc);
-      ConstantInt *CurIdx = ConstantInt::get(Int32Ty, cur_idx);
-      /* Load SHM pointer */
-
-      LoadInst *MapPtr = IRB.CreateLoad(AFLMapPtr);
-      MapPtr->setMetadata(M.getMDKindID("nosanitize"), MDNode::get(C, None));
-      Value *MapPtrIdx =
-          IRB.CreateGEP(MapPtr, CurLoc);
-
-      /* Update bitmap */
-
-      LoadInst *Counter = IRB.CreateLoad(MapPtrIdx);
-      Counter->setMetadata(M.getMDKindID("nosanitize"), MDNode::get(C, None));
-      Value *Incr = IRB.CreateOr(Counter,
-          IRB.CreateShl(ConstantInt::get(Int8Ty, 1), CurIdx));
-      IRB.CreateStore(Incr, MapPtrIdx)
-          ->setMetadata(M.getMDKindID("nosanitize"), MDNode::get(C, None));
-#else
       /* Make up cur_loc */
 
       unsigned int cur_loc = AFL_R(MAP_SIZE);
@@ -171,7 +148,6 @@ bool AFLCoverage::runOnModule(Module &M) {
       StoreInst *Store =
           IRB.CreateStore(ConstantInt::get(Int32Ty, cur_loc >> 1), AFLPrevLoc);
       Store->setMetadata(M.getMDKindID("nosanitize"), MDNode::get(C, None));
-#endif
 
       inst_blocks++;
 
@@ -207,4 +183,3 @@ static RegisterStandardPasses RegisterAFLPass(
 
 static RegisterStandardPasses RegisterAFLPass0(
     PassManagerBuilder::EP_EnabledOnOptLevel0, registerAFLPass);
-
