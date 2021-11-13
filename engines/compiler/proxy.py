@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
-import sys
 import os
+import sys
 
 ROOT = os.path.abspath(os.path.dirname(os.path.realpath(__file__)))
 AFL_ROOT = os.path.join(ROOT, "../../fuzz/afl")
@@ -93,6 +93,9 @@ def rewrite(cmdline):
             if "--no-call-graph-profile-sort" in arg:
                 continue
             new_cmdline.append(arg)
+
+    # [jfmcoronel] lcov hack
+    new_cmdline.append("--coverage")
     print(new_cmdline)
 
 
