@@ -43,7 +43,7 @@ def get_fuzz_target_path(jit_compiler_code: str):
     if jit_compiler_code == 'jsc':
         return '/home/jfmcoronel/jsc'
     elif jit_compiler_code == 'v8':
-        return '/home/jfmcoronel/d8'
+        return '/home/jfmcoronel/v8-afl-dir/v8/out/Debug/d8'
     elif jit_compiler_code == 'ch':
         return '/home/jfmcoronel/ch'
     else:
