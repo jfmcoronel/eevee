@@ -22,7 +22,7 @@ class MetricsInfo(NamedTuple):
 
 
 v8_metrics_info = MetricsInfo(
-    fuzz_target_path='/home/jfmcoronel/d8',
+    fuzz_target_path='/home/jfmcoronel/v8-afl-dir/v8/out/Debug/d8',
     cov_target_path='/home/jfmcoronel/die/engines/v8/v8/out/Debug/d8',
     optset_flags='--trace-turbo-reduction',
     cov_source_code_path='/home/jfmcoronel/die/engines/v8/v8/out/Debug/',
