@@ -138,7 +138,7 @@ def main():
         populate(jit_compiler_code, until_n_inputs, seed)
 
     elif cmd == 'prune-v8-corpus':
-        n = sys.argv[2:]
+        n = sys.argv[2]
 
         prune_v8_corpus_with_slave(n)
 
