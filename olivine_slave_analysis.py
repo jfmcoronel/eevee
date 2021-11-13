@@ -113,6 +113,36 @@ def generate_serial_coverage(metrics_info: MetricsInfo):
     execute(' ; '.join(cmd_after))
 
 
+def generate_own_coverage(n: str, metrics_info: MetricsInfo):
+    n = str(n).zfill(2)
+
+    fuzz_input_basepath = f'/home/jfmcoronel/die/output-{n}/@all_inputs/*.js'
+
+    for full_js_path in sorted(glob.glob(fuzz_input_basepath)):
+        actual_cmd = f'timeout {TIMEOUT} {metrics_info.fuzz_target_path} {full_js_path}'
+        execute(actual_cmd)
+
+
+def generate_coverage_summary(metrics_info: MetricsInfo):
+    output_basepath = f'~/die/output-summary/'
+
+    cmd_before: List[str] = [
+        f'rm -rf {output_basepath}',
+        f'mkdir {output_basepath}',
+        f'cd {output_basepath}',
+    ]
+    execute(' ; '.join(cmd_before))
+
+    lcovinfo_path = os.path.join(output_basepath, '.lcovinfo')
+
+    cmd_after: List[str] = [
+        f'cd {metrics_info.cov_source_code_path}',
+        f'/usr/bin/lcov --capture --no-checksum --directory {metrics_info.cov_source_code_path} --output-file {lcovinfo_path} --gcov-tool ~/gcov_for_clang.sh',
+        f'genhtml {lcovinfo_path} --output-directory {output_basepath} --ignore-errors=source',
+    ]
+    execute(' ; '.join(cmd_after))
+
+
 def main():
     cmd, n, jit_compiler_code = sys.argv[1:]
     n = n.zfill(2)
@@ -124,17 +154,18 @@ def main():
         execute(f'tmux rename-window -t optset-{n} done-{n}')
 
     elif cmd == 'coverage':
+        execute(f'tmux rename-window -t done-{n} coverage-{n}')
+        generate_own_coverage(n, metrics_info)
+
         if int(n) == 1:
-            # Cannot be parallelized yet
-            # Must wait for all slaves to finish
-            execute(f'tmux rename-window -t done-{n} coverage-{n}')
-            wait_until_tmux_windows_closed('fuzz', 20)
-            wait_until_tmux_windows_closed('optset', 20)
-
-            # TODO: Parallelize
-            generate_serial_coverage(metrics_info)
-
+            wait_until_tmux_windows_closed('fuzz', 60)
+            wait_until_tmux_windows_closed('optset', 60)
+            generate_coverage_summary(metrics_info)
+            execute(f'tmux rename-window -t coverage-{n} summary-{n}')
+            execute(f'tmux rename-window -t summary-{n} done-{n}')
+        else:
             execute(f'tmux rename-window -t coverage-{n} done-{n}')
+
     else:
         assert False, f'Invalid arguments: {sys.argv}'
 
