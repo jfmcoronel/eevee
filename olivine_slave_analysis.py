@@ -137,7 +137,7 @@ def generate_coverage_summary(metrics_info: MetricsInfo):
 
     cmd_after: List[str] = [
         f'cd {metrics_info.cov_source_code_path}',
-        f'/usr/bin/lcov --capture --no-checksum --directory {metrics_info.cov_source_code_path} --output-file {lcovinfo_path} --gcov-tool ~/gcov_for_clang.sh',
+        f'/usr/bin/lcov --capture --no-checksum --directory {metrics_info.cov_source_code_path} --output-file {lcovinfo_path} --gcov-tool ~/die/gcov_for_clang.sh',
         f'genhtml {lcovinfo_path} --output-directory {output_basepath} --ignore-errors=source',
     ]
     execute(' ; '.join(cmd_after))
