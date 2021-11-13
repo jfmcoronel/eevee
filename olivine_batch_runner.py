@@ -68,7 +68,9 @@ def populate(jit_compiler_code: str, until_n_inputs: int, seed: int):
         f'cd ~/die && rm -rf ~/die/output',
         f'mkdir ~/die/output',
         # TODO: Remove me
+        f'tmux rename-window -t populate-{{SLAVENUMBER}} prune-{{SLAVENUMBER}}',
         '' if jit_compiler_code != 'v8' else f'python3 ~/die/olivine_batch_runner.py prune-v8-corpus {{SLAVENUMBER}} {jit_compiler_code} {until_n_inputs} {seed}',
+        f'tmux rename-window -t prune-{{SLAVENUMBER}} populate-{{SLAVENUMBER}}',
         f'python3 ~/die/olivine_batch_runner.py populate-with-slave {{SLAVENUMBER}} {jit_compiler_code} {until_n_inputs} {seed}',
     ]
 
