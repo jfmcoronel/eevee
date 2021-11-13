@@ -119,7 +119,7 @@ def generate_own_coverage(n: str, metrics_info: MetricsInfo):
     fuzz_input_basepath = f'/home/jfmcoronel/die/output-{n}/@all_inputs/*.js'
 
     for full_js_path in sorted(glob.glob(fuzz_input_basepath)):
-        actual_cmd = f'timeout {TIMEOUT} {metrics_info.fuzz_target_path} {full_js_path}'
+        actual_cmd = f'timeout {TIMEOUT} {metrics_info.cov_target_path} {full_js_path}'
         execute(actual_cmd)
 
 
