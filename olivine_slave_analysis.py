@@ -160,6 +160,7 @@ def main():
         if int(n) == 1:
             wait_until_tmux_windows_closed('fuzz', 60)
             wait_until_tmux_windows_closed('optset', 60)
+            wait_until_tmux_windows_closed('coverage', 60)
             generate_coverage_summary(metrics_info)
             execute(f'tmux rename-window -t coverage-{n} summary-{n}')
             execute(f'tmux rename-window -t summary-{n} done-{n}')
