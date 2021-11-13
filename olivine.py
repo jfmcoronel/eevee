@@ -110,7 +110,7 @@ if jit_compiler_type_number == JSC:
 
 elif jit_compiler_type_number == V8:
     jit_compiler_env = ""
-    jit_compiler_bin_path = "timeout 10 /home/jfmcoronel/d8"
+    jit_compiler_bin_path = "timeout 10 /home/jfmcoronel/v8-afl-dir/v8/out/Debug/d8"
     jit_compiler_flags = "--trace-turbo-reduction"
     current_fuzz_input_path = "/home/jfmcoronel/die/output-0/.cur_input"
 
