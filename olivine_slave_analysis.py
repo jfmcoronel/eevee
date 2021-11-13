@@ -112,11 +112,12 @@ def main():
         generate_own_coverage(n, metrics_info)
 
         if int(n) == 1:
+            execute(f'tmux rename-window -t coverage-{n} summary-{n}')
+
             wait_until_tmux_windows_closed('fuzz', 60)
             wait_until_tmux_windows_closed('optset', 60)
             wait_until_tmux_windows_closed('coverage', 60)
 
-            execute(f'tmux rename-window -t coverage-{n} summary-{n}')
             generate_coverage_summary(metrics_info)
             execute(f'tmux rename-window -t summary-{n} done-{n}')
 
