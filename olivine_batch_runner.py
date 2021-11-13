@@ -25,12 +25,13 @@ bash_log_all_output = '>&2' if LOG_ALL_OUTPUT else ''
 
 
 def get_lib_string(jit_compiler_code: str):
-    die_corpus_path = '/home/jfmcoronel/die/DIE-corpus/'
+    return ''
+    # die_corpus_path = '/home/jfmcoronel/die/DIE-corpus/'
 
-    if jit_compiler_code == 'ch':
-        return f'-lib={die_corpus_path}/lib.js -lib={die_corpus_path}/jsc.js -lib={die_corpus_path}/v8.js -lib={die_corpus_path}/ffx.js -lib={die_corpus_path}/chakra.js'
+    # if jit_compiler_code == 'ch':
+    #     return f'-lib={die_corpus_path}/lib.js -lib={die_corpus_path}/jsc.js -lib={die_corpus_path}/v8.js -lib={die_corpus_path}/ffx.js -lib={die_corpus_path}/chakra.js'
 
-    return f'{die_corpus_path}/lib.js {die_corpus_path}/jsc.js {die_corpus_path}/v8.js {die_corpus_path}/ffx.js {die_corpus_path}/chakra.js'
+    # return f'{die_corpus_path}/lib.js {die_corpus_path}/jsc.js {die_corpus_path}/v8.js {die_corpus_path}/ffx.js {die_corpus_path}/chakra.js'
 
 
 def run_windowed_slaves_in_current_session(cmd: str, prefix: str, persist: bool):
