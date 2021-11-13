@@ -1,3 +1,3 @@
 #!/bin/bash
 echo "$@"
-exec llvm-cov-6.0 gcov "$@"
+exec llvm-cov-10 gcov "$@"
