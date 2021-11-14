@@ -41,10 +41,12 @@ def cmd_with_time_logging(cmd: str, log_path: str, should_log_all_output: bool, 
     log_all_output = '>&2' if should_log_all_output else ''
 
     # TODO: Refactor
-    if must_have_double_braces:
-        return f'''bash -c "{{{{ time {cmd} ; }}}} 2> >(tee {log_path} {log_all_output}) {log_all_output}"'''
-    else:
-        return f'''bash -c "{{ time {cmd} ; }} 2> >(tee {log_path} {log_all_output}) {log_all_output}"'''
+    ret = f'''bash -c "{{{{ time {cmd} ; }}}} 2> >(tee {log_path} {log_all_output}) {log_all_output}"''' if must_have_double_braces \
+          else f'''bash -c "{{ time {cmd} ; }} 2> >(tee {log_path} {log_all_output}) {log_all_output}"'''
+
+    print('@@@ Generated:', ret)
+
+    return ret
 
 
 def get_fuzz_target_path(jit_compiler_code: str):
