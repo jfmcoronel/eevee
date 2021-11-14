@@ -17,11 +17,11 @@ LOG_ALL_OUTPUT = False
 bash_log_all_output = '>&2' if LOG_ALL_OUTPUT else ''
 
 # Usage:
-# python3 olivine_batch_runner.py start {jitCompilerCode} {seed} {untilNInputs}
-# python3 olivine_batch_runner.py populate {jitCompilerCode} {seed} {untilNInputs}
-# python3 olivine_batch_runner.py prune-v8-corpus {jitCompilerCode} {seed} {untilNInputs}
-# python3 olivine_batch_runner.py populate-with-slave {n} {jitCompilerCode} {seed} {untilNInputs}
-# python3 olivine_batch_runner.py fuzz {jitCompilerCode} {seed} {untilNInputs}
+# python3 olivine_batch_runner.py start {jitCompilerCode} {untilNInputs} {seed}
+# python3 olivine_batch_runner.py populate {jitCompilerCode} {untilNInputs} {seed}
+# python3 olivine_batch_runner.py prune-v8-corpus {jitCompilerCode} {untilNInputs} {seed}
+# python3 olivine_batch_runner.py populate-with-slave {n} {jitCompilerCode} {untilNInputs} {seed}
+# python3 olivine_batch_runner.py fuzz {jitCompilerCode} {untilNInputs} {seed}
 
 
 def get_lib_string(jit_compiler_code: str):
