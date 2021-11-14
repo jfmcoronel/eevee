@@ -35,8 +35,9 @@ def get_lib_string(jit_compiler_code: str):
     # return f'{die_corpus_path}/lib.js {die_corpus_path}/jsc.js {die_corpus_path}/v8.js {die_corpus_path}/ffx.js {die_corpus_path}/chakra.js'
 
 
-def run_windowed_slaves_in_current_session(cmd: str, prefix: str, persist: bool):
+def run_windowed_slaves_in_current_session(cmds: List[str], prefix: str, persist: bool):
     slave_count = multiprocessing.cpu_count()
+    cmd = ' ; '.join(cmd for cmd in cmds if cmd)
 
     # Start from 01
     for n in range(1, slave_count + 1):
@@ -76,7 +77,7 @@ def populate(jit_compiler_code: str, until_n_inputs: int, seed: int):
         f'python3 ~/die/olivine_batch_runner.py populate-with-slave {{SLAVENUMBER}} {jit_compiler_code} {until_n_inputs} {seed}',
     ]
 
-    run_windowed_slaves_in_current_session(' ; '.join(cmd), 'populate', False)
+    run_windowed_slaves_in_current_session(cmd, 'populate', False)
 
 
 def prune_v8_corpus_with_slave(n: str):
@@ -103,7 +104,7 @@ def prune_v8_corpus_with_slave(n: str):
 def populate_with_slave(n: str, fuzz_target_path: str, jit_compiler_code: str, until_n_inputs: int, seed: int):
     lib_string = get_lib_string(jit_compiler_code)
 
-    execute(f'''bash -c "{{ time ./fuzz/afl/afl-fuzz -s {seed} -e {until_n_inputs} -j {jit_compiler_code} -m none -o output-{n} -i ./corpus/output-{n} '{fuzz_target_path}' {lib_string} @@ ; }} 2> >(tee ~/die/output-{n}/time-populate.txt {bash_log_all_output}) {bash_log_all_output}"''')
+    execute(f'''bash -c "{{ time ./fuzz/afl/afl-fuzz -C -s {seed} -e {until_n_inputs} -j {jit_compiler_code} -m none -o output-{n} -i ./corpus/output-{n} '{fuzz_target_path}' {lib_string} @@ ; }} 2> >(tee ~/die/output-{n}/time-populate.txt {bash_log_all_output}) {bash_log_all_output}"''')
 
 
 def fuzz(jit_compiler_code: str, until_n_inputs: int, seed: int):
@@ -112,14 +113,14 @@ def fuzz(jit_compiler_code: str, until_n_inputs: int, seed: int):
 
     execute('echo core | sudo tee /proc/sys/kernel/core_pattern')
 
-    cmd: List[str] = [
+    cmds: List[str] = [
         'cd ~/die',
         f'''bash -c "{{{{ time ./fuzz/afl/afl-fuzz -s {seed} -e {until_n_inputs} -j {jit_compiler_code} -m none -o output '{fuzz_target_path}' {lib_string} @@ ; }}}} 2> >(tee ~/die/output/time-fuzz.txt {bash_log_all_output}) {bash_log_all_output}"''',
         f'bash -c "{{{{ time python3 ~/die/olivine_slave_analysis.py optset {{SLAVENUMBER}} {jit_compiler_code} ; }}}} 2> >(tee ~/die/output/time-analyze-optset.txt >&2) >&2"',
         f'bash -c "{{{{ time python3 ~/die/olivine_slave_analysis.py coverage {{SLAVENUMBER}} {jit_compiler_code} ; }}}} 2> >(tee ~/die/output/time-analyze-coverage.txt >&2) >&2"',
     ]
 
-    run_windowed_slaves_in_current_session(' ; '.join(cmd), 'fuzz', True)
+    run_windowed_slaves_in_current_session(cmds, 'fuzz', True)
 
 
 def main():

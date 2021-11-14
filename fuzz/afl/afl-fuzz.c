@@ -3338,6 +3338,7 @@ static u8 save_if_interesting(char** argv, void* mem, u32 len, u8 fault) {
   }
 #endif
 
+  ACTF("@@@  fault %d, crash_mode %d  @@@", fault, crash_mode);
   if (fault == crash_mode) {
 
     /* Keep only if there are new bits in the map, add to queue for
