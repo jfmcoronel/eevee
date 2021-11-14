@@ -83,7 +83,7 @@ def populate(jit_compiler_code: str, until_n_inputs: int, seed: int):
 def prune_v8_corpus_with_slave(n: str):
     js_files = sorted(glob.glob(f'/home/jfmcoronel/die/corpus/output-{n}/*.js'))
     remaining = len(js_files)
-    dump_suffix = f'2>&1; echo $?'
+    dump_suffix = f'2>&1; echo -e "\n$?"'
 
     for full_js_path in js_files:
         actual_cmd = f'timeout {TIMEOUT} {v8_metrics_info.fuzz_target_path} {v8_metrics_info.optset_flags} {full_js_path} {dump_suffix}'
