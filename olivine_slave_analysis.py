@@ -34,7 +34,7 @@ def generate_optsets(n: str, metrics_info: MetricsInfo):
         js_basename = os.path.splitext(js_name_ext)[0]
         optset_output_path = os.path.join(output_basepath, f'{js_basename}.txt')
 
-        dump_suffix = f'>{optset_output_path} 2>&1; echo -e "\n$?" >> {optset_output_path}'
+        dump_suffix = f'>{optset_output_path} 2>&1; echo -e "\\n$?" >> {optset_output_path}'
         actual_cmd = f'timeout {TIMEOUT} {metrics_info.fuzz_target_path} {metrics_info.optset_flags} {full_js_path} {dump_suffix}'
 
         execute(actual_cmd)

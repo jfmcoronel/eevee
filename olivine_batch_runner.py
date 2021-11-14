@@ -73,7 +73,8 @@ def populate(jit_compiler_code: str, until_n_inputs: int, seed: int):
     prune_cmds: List[str] = [
         f'tmux rename-window -t populate-{{SLAVENUMBER}} prune-{{SLAVENUMBER}}',
         cmd_with_time_logging(
-            f'python3 {OLIVINE_BASEPATH}/olivine_batch_runner.py prune-v8-corpus {{SLAVENUMBER}} {jit_compiler_code} {until_n_inputs} {seed}',
+            # -u: Must be unbuffered for realtime stdout
+            f'python3 -u {OLIVINE_BASEPATH}/olivine_batch_runner.py prune-v8-corpus {{SLAVENUMBER}} {jit_compiler_code} {until_n_inputs} {seed}',
             f'{OLIVINE_BASEPATH}/OLIVINE_SLAVE_OUTPUT_PATH/log-prune.txt',
             should_log_all_output=True,
             must_have_double_braces=True,
@@ -94,7 +95,7 @@ def populate(jit_compiler_code: str, until_n_inputs: int, seed: int):
 def prune_v8_corpus_with_slave(n: str):
     js_files = sorted(glob.glob(f'/home/jfmcoronel/die/corpus/{OLIVINE_SLAVE_OUTPUT_DIR_PREFIX}{n}/*.js'))
     remaining = len(js_files)
-    dump_suffix = f'2>&1; echo -e "\n$?"'
+    dump_suffix = f'2>&1; echo -e "\\n$?"'
 
     for full_js_path in js_files:
         actual_cmd = f'timeout {TIMEOUT} {v8_metrics_info.fuzz_target_path} {v8_metrics_info.optset_flags} {full_js_path} {dump_suffix}'
