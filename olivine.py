@@ -144,4 +144,7 @@ r = redis.Redis(host='localhost', port=6379, db=0)
 count = r.incr(key, 1)
 
 with open(jit_compiler_feedback_filepath, 'wb') as f:
-    f.write(count.to_bytes(8, 'little'))
+    if key == '@@@':
+        f.write((0).to_bytes(8, 'little'))
+    else:
+        f.write(count.to_bytes(8, 'little'))
