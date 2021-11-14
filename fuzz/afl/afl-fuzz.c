@@ -3328,7 +3328,7 @@ static u8 save_if_interesting(char** argv, void* mem, u32 len, u8 fault) {
   olivine_verdict = olivine_get_fuzz_input_hits();
 
   if (olivine_verdict > 1) {
-    ACTF("-- Optset already seen %llu times --\n", count);
+    ACTF("-- Optset already seen %llu times --\n", olivine_verdict);
   } else if (olivine_verdict == 1) {
     ACTF("-- Generated new optset --");
   } else {
