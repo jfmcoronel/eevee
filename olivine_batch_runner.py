@@ -6,6 +6,7 @@ from typing import List
 
 from olivine_helpers import (
     OLIVINE_BASEPATH,
+    OLIVINE_SLAVE_OUTPUT_DIR_PREFIX,
     REDIS_PORT,
     TIMEOUT,
     cmd_with_time_logging,
@@ -40,7 +41,7 @@ def run_windowed_slaves_in_current_session(cmds: List[str], prefix: str, persist
     for n in range(1, slave_count + 1):
         n = str(n).zfill(2)
 
-        new_cmd = cmd.replace('output', f'output-{n}') \
+        new_cmd = cmd.replace('OLIVINE_SLAVE_OUTPUT_PATH', f'{OLIVINE_SLAVE_OUTPUT_DIR_PREFIX}{n}') \
                      .format(SLAVENUMBER=n)
 
         if persist:
@@ -65,15 +66,15 @@ def populate(jit_compiler_code: str, until_n_inputs: int, seed: int):
     execute('echo core | sudo tee /proc/sys/kernel/core_pattern')
 
     pre_cmds: List[str] = [
-        f'cd {OLIVINE_BASEPATH} && rm -rf {OLIVINE_BASEPATH}/output',
-        f'mkdir {OLIVINE_BASEPATH}/output',
+        f'cd {OLIVINE_BASEPATH} && rm -rf {OLIVINE_BASEPATH}/OLIVINE_SLAVE_OUTPUT_PATH',
+        f'mkdir {OLIVINE_BASEPATH}/OLIVINE_SLAVE_OUTPUT_PATH',
     ]
 
     prune_cmds: List[str] = [
         f'tmux rename-window -t populate-{{SLAVENUMBER}} prune-{{SLAVENUMBER}}',
         cmd_with_time_logging(
             f'python3 {OLIVINE_BASEPATH}/olivine_batch_runner.py prune-v8-corpus {{SLAVENUMBER}} {jit_compiler_code} {until_n_inputs} {seed}',
-            f'{OLIVINE_BASEPATH}/output-{{SLAVENUMBER}}/log-prune.txt',
+            f'{OLIVINE_BASEPATH}/OLIVINE_SLAVE_OUTPUT_PATH/log-prune.txt',
             should_log_all_output=True,
             must_have_double_braces=True,
         ),
@@ -91,7 +92,7 @@ def populate(jit_compiler_code: str, until_n_inputs: int, seed: int):
 
 
 def prune_v8_corpus_with_slave(n: str):
-    js_files = sorted(glob.glob(f'/home/jfmcoronel/die/corpus/output-{n}/*.js'))
+    js_files = sorted(glob.glob(f'/home/jfmcoronel/die/corpus/{OLIVINE_SLAVE_OUTPUT_DIR_PREFIX}{n}/*.js'))
     remaining = len(js_files)
     dump_suffix = f'2>&1; echo -e "\n$?"'
 
@@ -113,8 +114,8 @@ def prune_v8_corpus_with_slave(n: str):
 
 def populate_with_slave(n: str, fuzz_target_path: str, jit_compiler_code: str, until_n_inputs: int, seed: int):
     populate_cmd = cmd_with_time_logging(
-        f'''./fuzz/afl/afl-fuzz -C -s {seed} -e {until_n_inputs} -j {jit_compiler_code} -m none -o output-{n} -i ./corpus/output-{n} '{fuzz_target_path}' @@''',
-        f'{OLIVINE_BASEPATH}/output-{n}/log-populate.txt',
+        f'''./fuzz/afl/afl-fuzz -C -s {seed} -e {until_n_inputs} -j {jit_compiler_code} -m none -o {OLIVINE_SLAVE_OUTPUT_DIR_PREFIX}{n} -i ./corpus/{OLIVINE_SLAVE_OUTPUT_DIR_PREFIX}{n} '{fuzz_target_path}' @@''',
+        f'{OLIVINE_BASEPATH}/{OLIVINE_SLAVE_OUTPUT_DIR_PREFIX}{n}/log-populate.txt',
         should_log_all_output=False,
         must_have_double_braces=False,
     )
@@ -128,22 +129,22 @@ def fuzz(jit_compiler_code: str, until_n_inputs: int, seed: int):
     execute('echo core | sudo tee /proc/sys/kernel/core_pattern')
 
     fuzz_cmd = cmd_with_time_logging(
-        f'''./fuzz/afl/afl-fuzz -s {seed} -e {until_n_inputs} -j {jit_compiler_code} -m none -o output '{fuzz_target_path}' @@''',
-        '{OLIVINE_BASEPATH}/output/log-fuzz.txt',
+        f'''./fuzz/afl/afl-fuzz -s {seed} -e {until_n_inputs} -j {jit_compiler_code} -m none -o OLIVINE_SLAVE_OUTPUT_PATH '{fuzz_target_path}' @@''',
+        '{OLIVINE_BASEPATH}/OLIVINE_SLAVE_OUTPUT_PATH/log-fuzz.txt',
         should_log_all_output=False,
         must_have_double_braces=True,
     )
 
     optset_cmd = cmd_with_time_logging(
         f'python3 {OLIVINE_BASEPATH}/olivine_slave_analysis.py optset {{SLAVENUMBER}} {jit_compiler_code}',
-        '{OLIVINE_BASEPATH}/output/log-analyze-optset.txt',
+        '{OLIVINE_BASEPATH}/OLIVINE_SLAVE_OUTPUT_PATH/log-analyze-optset.txt',
         should_log_all_output=True,
         must_have_double_braces=True,
     )
 
     coverage_cmd = cmd_with_time_logging(
         f'python3 {OLIVINE_BASEPATH}/olivine_slave_analysis.py coverage {{SLAVENUMBER}} {jit_compiler_code}',
-        '{OLIVINE_BASEPATH}/output/log-analyze-coverage.txt',
+        '{OLIVINE_BASEPATH}/OLIVINE_SLAVE_OUTPUT_PATH/log-analyze-coverage.txt',
         should_log_all_output=True,
         must_have_double_braces=True,
     )

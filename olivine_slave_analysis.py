@@ -7,6 +7,7 @@ from typing import List
 from olivine_helpers import (
     MetricsInfo,
     OLIVINE_BASEPATH,
+    OLIVINE_SLAVE_OUTPUT_DIR_PREFIX,
     TIMEOUT,
     execute,
     get_metrics_info,
@@ -18,8 +19,8 @@ from olivine_helpers import (
 # python3 olivine_slave_analysis.py coverage <n> <jit_compiler_code>
 
 def generate_optsets(n: str, metrics_info: MetricsInfo):
-    output_basepath = f'{OLIVINE_BASEPATH}/output-{n}/@optset'
-    fuzz_input_basepath = f'/home/jfmcoronel/die/output-{n}/@all_inputs/*.js'
+    output_basepath = f'{OLIVINE_BASEPATH}/{OLIVINE_SLAVE_OUTPUT_DIR_PREFIX}{n}/@optset'
+    fuzz_input_basepath = f'/home/jfmcoronel/die/{OLIVINE_SLAVE_OUTPUT_DIR_PREFIX}{n}/@all_inputs/*.js'
 
     cmd: List[str] = [
         f'rm -rf {output_basepath}',
@@ -40,7 +41,7 @@ def generate_optsets(n: str, metrics_info: MetricsInfo):
 
 
 def generate_serial_coverage(metrics_info: MetricsInfo):
-    output_basepath = f'{OLIVINE_BASEPATH}/output-summary/'
+    output_basepath = f'{OLIVINE_BASEPATH}/{OLIVINE_SLAVE_OUTPUT_DIR_PREFIX}summary/'
 
     cmd_before: List[str] = [
         f'rm -rf {output_basepath}',
@@ -52,7 +53,7 @@ def generate_serial_coverage(metrics_info: MetricsInfo):
     for n in range(1, multiprocessing.cpu_count()):
         n = str(n).zfill(2)
 
-        fuzz_input_basepath = f'/home/jfmcoronel/die/output-{n}/@all_inputs/*.js'
+        fuzz_input_basepath = f'/home/jfmcoronel/die/{OLIVINE_SLAVE_OUTPUT_DIR_PREFIX}{n}/@all_inputs/*.js'
 
         for full_js_path in sorted(glob.glob(fuzz_input_basepath)):
             actual_cmd = f'timeout {TIMEOUT} {metrics_info.fuzz_target_path} {full_js_path}'
@@ -71,7 +72,7 @@ def generate_serial_coverage(metrics_info: MetricsInfo):
 def generate_own_coverage(n: str, metrics_info: MetricsInfo):
     n = str(n).zfill(2)
 
-    fuzz_input_basepath = f'/home/jfmcoronel/die/output-{n}/@all_inputs/*.js'
+    fuzz_input_basepath = f'/home/jfmcoronel/die/{OLIVINE_SLAVE_OUTPUT_DIR_PREFIX}{n}/@all_inputs/*.js'
 
     for full_js_path in sorted(glob.glob(fuzz_input_basepath)):
         actual_cmd = f'timeout {TIMEOUT} {metrics_info.cov_target_path} {full_js_path}'
@@ -79,7 +80,7 @@ def generate_own_coverage(n: str, metrics_info: MetricsInfo):
 
 
 def generate_coverage_summary(metrics_info: MetricsInfo):
-    output_basepath = f'{OLIVINE_BASEPATH}/output-summary/'
+    output_basepath = f'{OLIVINE_BASEPATH}/{OLIVINE_SLAVE_OUTPUT_DIR_PREFIX}summary/'
 
     cmd_before: List[str] = [
         f'rm -rf {output_basepath}',
