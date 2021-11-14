@@ -50,8 +50,6 @@ def run_windowed_slaves_in_current_session(cmds: List[str], prefix: str, persist
 
 
 def start(jit_compiler_code: str, until_n_inputs: int, seed: int):
-    execute(f'cd {OLIVINE_BASEPATH} && git pull && ./compile.sh')
-
     # Enables running each phase in a new tmux session
     execute(f'tmux new-session -s populate -d "python3 {OLIVINE_BASEPATH}/olivine_batch_runner.py populate {jit_compiler_code} {until_n_inputs} {seed}"')
 
@@ -165,6 +163,12 @@ def main():
     print(cmd)
 
     if cmd == 'start':
+        # Update self first
+        execute(f'cd {OLIVINE_BASEPATH} && git pull && ./compile.sh')
+        # Reexecute self
+        execute(f"python3 {sys.argv[0]} true-start {' '.join(sys.argv[2:])}")
+
+    elif cmd == 'true-start':
         jit_compiler_code, until_n_inputs, seed = sys.argv[2:]
 
         seed = int(seed)
