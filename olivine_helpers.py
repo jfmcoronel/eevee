@@ -36,9 +36,14 @@ metrics_info_mapping: Dict[str, MetricsInfo] = {
 }
 
 
-def cmd_with_time_logging(cmd: str, log_path: str, should_log_all_output: bool):
+def cmd_with_time_logging(cmd: str, log_path: str, should_log_all_output: bool, must_have_double_braces: bool):
     log_all_output = '>&2' if should_log_all_output else ''
-    return f'''bash -c "{{ time {cmd} ; }} 2> >(tee {log_path} {log_all_output}) {log_all_output}"'''
+
+    # TODO: Refactor
+    if must_have_double_braces:
+        return f'''bash -c "{{{{ time {cmd} ; }}}} 2> >(tee {log_path} {log_all_output}) {log_all_output}"'''
+    else:
+        return f'''bash -c "{{ time {cmd} ; }} 2> >(tee {log_path} {log_all_output}) {log_all_output}"'''
 
 
 def get_fuzz_target_path(jit_compiler_code: str):
