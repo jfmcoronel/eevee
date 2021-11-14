@@ -4,6 +4,7 @@ from typing import Dict, NamedTuple
 
 TIMEOUT = 10
 REDIS_PORT = 6379
+OLIVINE_BASEPATH = '~/die/'
 
 
 # Python 3.6 has no dataclasses
@@ -33,6 +34,11 @@ metrics_info_mapping: Dict[str, MetricsInfo] = {
     'v8': v8_metrics_info,
     'ch': ch_metrics_info,
 }
+
+
+def cmd_with_time_logging(cmd: str, log_path: str, should_log_all_output: bool):
+    log_all_output = '>&2' if should_log_all_output else ''
+    return f'''bash -c "{{ time {cmd} ; }} 2> >(tee {log_path} {log_all_output}) {log_all_output}"'''
 
 
 def get_fuzz_target_path(jit_compiler_code: str):
