@@ -7078,7 +7078,11 @@ static s32 fuzz_dir(char* input_dir, char** argv) {
 static s32 generate_js(u8* cur_input, u8* tmp_outdir) {
   u8 *ts_dir, *cmdline;
   u32 seed;
+#ifdef OLIVINE_COMMON
+  s32 cnt = 10;
+#else
   s32 cnt = 100;
+#endif // OLIVINE_COMMON
   s32 status;
 
   seed = UR(UINT32_MAX);
