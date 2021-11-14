@@ -52,8 +52,6 @@ def run_windowed_slaves_in_current_session(cmd: str, prefix: str, persist: bool)
 
 
 def start(jit_compiler_code: str, until_n_inputs: int, seed: int):
-    execute(f'echo FLUSHALL | redis-cli -p {REDIS_PORT}')
-
     # Enables running each phase in a new tmux session
     execute(f'tmux new-session -s populate -d "python3 ~/die/olivine_batch_runner.py populate {jit_compiler_code} {until_n_inputs} {seed}"')
 
@@ -64,14 +62,15 @@ def start(jit_compiler_code: str, until_n_inputs: int, seed: int):
 
 
 def populate(jit_compiler_code: str, until_n_inputs: int, seed: int):
+    execute(f'echo FLUSHALL | redis-cli -p {REDIS_PORT}')
     execute(f'cd ~/die && rm -rf ~/die/corpus/ && python3 ./fuzz/scripts/make_initial_corpus.py ./DIE-corpus ./corpus')
     execute('echo core | sudo tee /proc/sys/kernel/core_pattern')
 
     cmd: List[str] = [
         f'cd ~/die && rm -rf ~/die/output',
         f'mkdir ~/die/output',
-        # TODO: Remove me
         f'tmux rename-window -t populate-{{SLAVENUMBER}} prune-{{SLAVENUMBER}}',
+        # TODO: Remove me
         '' if jit_compiler_code != 'v8' else f'python3 ~/die/olivine_batch_runner.py prune-v8-corpus {{SLAVENUMBER}} {jit_compiler_code} {until_n_inputs} {seed}',
         f'tmux rename-window -t prune-{{SLAVENUMBER}} populate-{{SLAVENUMBER}}',
         f'python3 ~/die/olivine_batch_runner.py populate-with-slave {{SLAVENUMBER}} {jit_compiler_code} {until_n_inputs} {seed}',

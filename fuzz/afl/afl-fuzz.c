@@ -404,12 +404,15 @@ static inline u32 UR(u32 limit) {
   ACTF("WARNING: Running Olivine without fixed randomization seed");
 #endif
 
-  u32 seed[2];
+  if (unlikely(!rand_cnt--)) {
+    u32 seed[2];
 
-  ck_read(dev_urandom_fd, &seed, sizeof(seed), "/dev/urandom");
+    ck_read(dev_urandom_fd, &seed, sizeof(seed), "/dev/urandom");
 
-  srandom(seed[0]);
-  rand_cnt = (RESEED_RNG / 2) + (seed[1] % RESEED_RNG);
+    srandom(seed[0]);
+    rand_cnt = (RESEED_RNG / 2) + (seed[1] % RESEED_RNG);
+
+  }
 
   return random() % limit;
 
@@ -1037,6 +1040,7 @@ static inline u8 has_new_bits(u8* virgin_map, bool update) {
   if (ret && virgin_map == virgin_bits) bitmap_changed = 1;
 
   return ret;
+
 }
 
 /* Count the number of bits set in the provided bitmap. Used for the status
@@ -3295,16 +3299,13 @@ int olivine_input_generation_ctr = 0;
 int olivine_round_ctr = 0;  // Number of fuzz_js invocations
 
 static u64 olivine_get_fuzz_input_hits() {
-  u8 ret = 0;
-
 	u8* fn = alloc_printf("%s/.olivine_dump", out_dir);
 	u8* cmdline = alloc_printf("python3 /home/jfmcoronel/die/olivine.py %d \"%s\"", olivine_jit_compiler_type, fn);
 	execute_sh(cmdline);
 
-  int fd;
   u64 count;
-  fd = open(fn, O_RDONLY);
-  read(fd, &count, 8);
+  int fd = open(fn, O_RDONLY);
+  read(fd, &count, sizeof(count));
   close(fd);
 
   return count;
@@ -3319,6 +3320,7 @@ static u64 olivine_get_fuzz_input_hits() {
 
 // [jfmcoronel] Main Olivine modification
 static u8 save_if_interesting(char** argv, void* mem, u32 len, u8 fault) {
+
   u8  *fn = "", *cmdline;
   u8  hnb = 0;
   s32 fd;
@@ -3328,11 +3330,11 @@ static u8 save_if_interesting(char** argv, void* mem, u32 len, u8 fault) {
   olivine_verdict = olivine_get_fuzz_input_hits();
 
   if (olivine_verdict > 1) {
-    ACTF("-- Optset already seen %llu times --\n", olivine_verdict);
+    ACTF("@@@  Optset already seen %llu times  @@@", olivine_verdict);
   } else if (olivine_verdict == 1) {
-    ACTF("-- Generated new optset --");
+    ACTF("@@@  Generated new optset  @@@");
   } else {
-    ACTF("-- Did not trigger JIT compilation --");
+    ACTF("@@@  Did not trigger JIT compilation  @@@");
   }
 #endif
 
@@ -3352,7 +3354,7 @@ static u8 save_if_interesting(char** argv, void* mem, u32 len, u8 fault) {
         if (crash_mode) total_crashes++;
 #ifdef IS_OLIVINE
         // [jfmcoronel] AFL will normally exit, so Olivine can intercept
-        if (olivine_verdict == 0) {
+        if (olivine_verdict != 1) {
           return 0;
         }
 #else
@@ -3364,7 +3366,7 @@ static u8 save_if_interesting(char** argv, void* mem, u32 len, u8 fault) {
       if (!(hnb = has_new_bits(virgin_bits, true))) {
 #ifdef IS_OLIVINE
         // [jfmcoronel] AFL will normally exit, so Olivine can intercept
-        if (olivine_verdict == 0) {
+        if (olivine_verdict != 1) {
           return 0;
         }
 #else
@@ -4864,6 +4866,7 @@ abort_trimming:
    a helper function for fuzz_one(). */
 
 EXP_ST u8 common_fuzz_stuff(char** argv, u8* out_buf, u32 len) {
+
   u8 fault;
 
   if (post_handler) {
@@ -4926,13 +4929,7 @@ EXP_ST u8 common_fuzz_stuff(char** argv, u8* out_buf, u32 len) {
 
   /* This handles FAULT_ERROR for us: */
 
-  u8 xxx = save_if_interesting(argv, out_buf, len, fault);
-  /*if (xxx == 0) {*/
-  /*  fprintf(stderr, "\n\nNOT INTERESTING\n\n");*/
-  /*} else {*/
-  /*  fprintf(stderr, "\n\n    - INTERESTING -\n\n");*/
-  /*}*/
-  queued_discovered += xxx;
+  queued_discovered += save_if_interesting(argv, out_buf, len, fault);
 
   if (!(stage_cur % stats_update_freq) || stage_cur + 1 == stage_max)
     show_stats();
@@ -7002,10 +6999,10 @@ static s32 fuzz_dir(char* input_dir, char** argv) {
     actual_js_ctr++;
 
     if (in_dir) {
-        ACTF("-- fuzz_dir (corpus file %d/%d; seed input %d) --", i + 1, nl_cnt, actual_js_ctr);
+        ACTF("@@@  fuzz_dir (corpus file %d/%d; seed input %d)  @@@", i + 1, nl_cnt, actual_js_ctr);
     } else {
         // Counter is incremented in common_fuzz_stuff which is called after this
-        ACTF("-- fuzz_dir (round %d, %d/%d; actual %d, total %d) [%d to generate] %s --", olivine_round_ctr, i + 1, nl_cnt, actual_js_ctr, olivine_input_generation_ctr + 1, olivine_until_n_inputs, fn);
+        ACTF("@@@  fuzz_dir (round %d, %d/%d; actual %d, total %d) [%d to generate] %s  @@@", olivine_round_ctr, i + 1, nl_cnt, actual_js_ctr, olivine_input_generation_ctr + 1, olivine_until_n_inputs, fn);
     }
 #endif // OLIVINE_COMMON
 
@@ -7076,7 +7073,9 @@ static s32 generate_js(u8* cur_input, u8* tmp_outdir) {
 }
 
 static u8 fuzz_js(char** argv) {
+#ifdef OLIVINE_COMMON
   olivine_round_ctr++;
+#endif
 
   u8 *fuzz_inputs_dir, *cmdline, *cur_input;
   s32 nl_cnt, fuzz_status;
