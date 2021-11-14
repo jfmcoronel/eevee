@@ -402,7 +402,7 @@ static inline u32 UR(u32 limit) {
 
 #ifdef OLIVINE_LOG_SEEDS
     u8 *fn = alloc_printf("%s/log-seeds.txt", out_dir);
-    int fd = open(fn, O_WRONLY | O_APPEND, 0600);
+    int fd = open(fn, O_WRONLY | O_CREAT | O_APPEND, 0600);
     ck_free(fn);
 
     FILE *fp = fdopen(fd, "a");
