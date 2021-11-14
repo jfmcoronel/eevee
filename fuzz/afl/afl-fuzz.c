@@ -3182,6 +3182,7 @@ static u8* describe_op(u8 hnb) {
     strcat(ret, ",@nojit");
   } else {
     strcat(ret, ",@old");
+  }
 #endif
 
   return ret;
