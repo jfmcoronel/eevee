@@ -3316,7 +3316,7 @@ int olivine_round_ctr = 0;  // Number of fuzz_js invocations
 
 static u64 olivine_get_fuzz_input_hits() {
 	u8* fn = alloc_printf("%s/.olivine_dump", out_dir);
-	u8* cmdline = alloc_printf("python3 /home/jfmcoronel/die/olivine.py %d \"%s\"", olivine_jit_compiler_type, fn);
+	u8* cmdline = alloc_printf("python3 /home/jfmcoronel/die/olivine_hook.py %d \"%s\"", olivine_jit_compiler_type, fn);
 	execute_sh(cmdline);
 
   u64 count;
