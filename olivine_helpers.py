@@ -3,6 +3,7 @@ import time
 from typing import Dict, NamedTuple
 
 TIMEOUT = 10
+REDIS_PORT = 6379
 
 
 # Python 3.6 has no dataclasses

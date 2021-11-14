@@ -5,6 +5,7 @@ import sys
 from typing import List
 
 from olivine_helpers import (
+    REDIS_PORT,
     TIMEOUT,
     execute,
     get_fuzz_target_path,
@@ -51,6 +52,8 @@ def run_windowed_slaves_in_current_session(cmd: str, prefix: str, persist: bool)
 
 
 def start(jit_compiler_code: str, until_n_inputs: int, seed: int):
+    execute(f'echo FLUSHALL | redis-cli -p {REDIS_PORT}')
+
     # Enables running each phase in a new tmux session
     execute(f'tmux new-session -s populate -d "python3 ~/die/olivine_batch_runner.py populate {jit_compiler_code} {until_n_inputs} {seed}"')
 
