@@ -3347,6 +3347,7 @@ static u8 save_if_interesting(char** argv, void* mem, u32 len, u8 fault) {
     if (in_dir) {
       // Check for updating global coverage,
       // but regardless of coverage, we add all corpus
+      ACTF("@@@  in_dir  @@@");
       has_new_bits(virgin_bits, true);
     }
     else {
@@ -3355,6 +3356,7 @@ static u8 save_if_interesting(char** argv, void* mem, u32 len, u8 fault) {
 #ifdef IS_OLIVINE
         // [jfmcoronel] AFL will normally exit, so Olivine can intercept
         if (olivine_verdict != 1) {
+          ACTF("@@@  Intercept 1  @@@");
           return 0;
         }
 #else
@@ -3367,6 +3369,7 @@ static u8 save_if_interesting(char** argv, void* mem, u32 len, u8 fault) {
 #ifdef IS_OLIVINE
         // [jfmcoronel] AFL will normally exit, so Olivine can intercept
         if (olivine_verdict != 1) {
+          ACTF("@@@  Intercept 2  @@@");
           return 0;
         }
 #else
@@ -3377,6 +3380,7 @@ static u8 save_if_interesting(char** argv, void* mem, u32 len, u8 fault) {
 
 #ifndef SIMPLE_FILES
 
+    ACTF("@@@  Fallback  @@@");
     fn = alloc_printf("%s/queue/id:%06u,%s", out_dir, queued_paths,
                       describe_op(hnb));
 
@@ -3422,6 +3426,8 @@ static u8 save_if_interesting(char** argv, void* mem, u32 len, u8 fault) {
 
     keeping = 1;
   }
+
+  ACTF("@@@  Pre-switch  @@@");
 
   switch (fault) {
 
@@ -3542,6 +3548,8 @@ keep_as_crash:
     default: return keeping;
 
   }
+
+  ACTF("@@@  Post-switch  @@@");
 
   /* If we're here, we apparently want to save the crash or hang
      test case, too. */
@@ -4892,7 +4900,7 @@ EXP_ST u8 common_fuzz_stuff(char** argv, u8* out_buf, u32 len) {
   }
 
   u8 *fn = alloc_printf("%s/%s/%08d.js", out_dir, path, olivine_input_generation_ctr);
-  ACTF("Writing to %s...", fn);
+  ACTF("@@@   Writing to %s...  @@@", fn);
   int fd = open(fn, O_WRONLY | O_CREAT, 0600);
   ck_free(fn);
 
