@@ -131,27 +131,27 @@ def fuzz(jit_compiler_code: str, until_n_inputs: int, seed: int):
 
     fuzz_cmd = cmd_with_time_logging(
         f'''./fuzz/afl/afl-fuzz -s {seed} -e {until_n_inputs} -j {jit_compiler_code} -m none -o OLIVINE_SLAVE_OUTPUT_PATH '{fuzz_target_path}' @@''',
-        '{OLIVINE_BASEPATH}/OLIVINE_SLAVE_OUTPUT_PATH/log-fuzz.txt',
+        f'{OLIVINE_BASEPATH}/OLIVINE_SLAVE_OUTPUT_PATH/log-fuzz.txt',
         should_log_all_output=False,
         must_have_double_braces=True,
     )
 
     optset_cmd = cmd_with_time_logging(
         f'python3 {OLIVINE_BASEPATH}/olivine_slave_analysis.py optset {{SLAVENUMBER}} {jit_compiler_code}',
-        '{OLIVINE_BASEPATH}/OLIVINE_SLAVE_OUTPUT_PATH/log-analyze-optset.txt',
+        f'{OLIVINE_BASEPATH}/OLIVINE_SLAVE_OUTPUT_PATH/log-analyze-optset.txt',
         should_log_all_output=True,
         must_have_double_braces=True,
     )
 
     coverage_cmd = cmd_with_time_logging(
         f'python3 {OLIVINE_BASEPATH}/olivine_slave_analysis.py coverage {{SLAVENUMBER}} {jit_compiler_code}',
-        '{OLIVINE_BASEPATH}/OLIVINE_SLAVE_OUTPUT_PATH/log-analyze-coverage.txt',
+        f'{OLIVINE_BASEPATH}/OLIVINE_SLAVE_OUTPUT_PATH/log-analyze-coverage.txt',
         should_log_all_output=True,
         must_have_double_braces=True,
     )
 
     cmds: List[str] = [
-        'cd {OLIVINE_BASEPATH}',
+        f'cd {OLIVINE_BASEPATH}',
         fuzz_cmd,
         optset_cmd,
         coverage_cmd,
