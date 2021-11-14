@@ -74,7 +74,8 @@ def populate(jit_compiler_code: str, until_n_inputs: int, seed: int):
         cmd_with_time_logging(
             f'python3 {OLIVINE_BASEPATH}/olivine_batch_runner.py prune-v8-corpus {{SLAVENUMBER}} {jit_compiler_code} {until_n_inputs} {seed}',
             f'{OLIVINE_BASEPATH}/output-{{SLAVENUMBER}}/log-prune.txt',
-            True,
+            should_log_all_output=True,
+            must_have_double_braces=True,
         ),
     ]
 
@@ -114,7 +115,8 @@ def populate_with_slave(n: str, fuzz_target_path: str, jit_compiler_code: str, u
     populate_cmd = cmd_with_time_logging(
         f'''./fuzz/afl/afl-fuzz -C -s {seed} -e {until_n_inputs} -j {jit_compiler_code} -m none -o output-{n} -i ./corpus/output-{n} '{fuzz_target_path}' @@''',
         f'{OLIVINE_BASEPATH}/output-{n}/log-populate.txt',
-        False,
+        should_log_all_output=False,
+        must_have_double_braces=False,
     )
 
     execute(populate_cmd)
@@ -128,19 +130,22 @@ def fuzz(jit_compiler_code: str, until_n_inputs: int, seed: int):
     fuzz_cmd = cmd_with_time_logging(
         f'''./fuzz/afl/afl-fuzz -s {seed} -e {until_n_inputs} -j {jit_compiler_code} -m none -o output '{fuzz_target_path}' @@''',
         '{OLIVINE_BASEPATH}/output/log-fuzz.txt',
-        False,
+        should_log_all_output=False,
+        must_have_double_braces=True,
     )
 
     optset_cmd = cmd_with_time_logging(
         f'python3 {OLIVINE_BASEPATH}/olivine_slave_analysis.py optset {{SLAVENUMBER}} {jit_compiler_code}',
         '{OLIVINE_BASEPATH}/output/log-analyze-optset.txt',
-        True,
+        should_log_all_output=True,
+        must_have_double_braces=True,
     )
 
     coverage_cmd = cmd_with_time_logging(
         f'python3 {OLIVINE_BASEPATH}/olivine_slave_analysis.py coverage {{SLAVENUMBER}} {jit_compiler_code}',
         '{OLIVINE_BASEPATH}/output/log-analyze-coverage.txt',
-        True,
+        should_log_all_output=True,
+        must_have_double_braces=True,
     )
 
     cmds: List[str] = [
