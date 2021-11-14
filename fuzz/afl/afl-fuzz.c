@@ -395,16 +395,21 @@ static u64 get_cur_time_us(void) {
 
 static inline u32 UR(u32 limit) {
 
-  if (!olivine_has_fixed_randomization_seed && unlikely(!rand_cnt--)) {
-
-    u32 seed[2];
-
-    ck_read(dev_urandom_fd, &seed, sizeof(seed), "/dev/urandom");
-
-    srandom(seed[0]);
-    rand_cnt = (RESEED_RNG / 2) + (seed[1] % RESEED_RNG);
-
+#ifdef OLIVINE_COMMON
+  if (olivine_has_fixed_randomization_seed) {
+    return random() % limit;
   }
+
+  // TODO: Remove
+  ACTF("WARNING: Running Olivine without fixed randomization seed");
+#endif
+
+  u32 seed[2];
+
+  ck_read(dev_urandom_fd, &seed, sizeof(seed), "/dev/urandom");
+
+  srandom(seed[0]);
+  rand_cnt = (RESEED_RNG / 2) + (seed[1] % RESEED_RNG);
 
   return random() % limit;
 
@@ -8357,6 +8362,8 @@ int main(int argc, char** argv) {
           if (sscanf(optarg, "%u", &olivine_until_n_inputs) < 1 ||
               optarg[0] == '-') FATAL("Bad syntax used for -e");
 
+          ACTF("Will stop after %u fuzz inputs generated locally", olivine_until_n_inputs);
+
           break;
 
       }
@@ -8366,8 +8373,9 @@ int main(int argc, char** argv) {
           if (sscanf(optarg, "%u", &olivine_randomization_seed) < 1 ||
               optarg[0] == '-') FATAL("Bad syntax used for -s");
 
-          olivine_has_fixed_randomization_seed = 1;
           srandom(olivine_randomization_seed);
+          ACTF("Randomization seed is fixed at %u", olivine_randomization_seed);
+          olivine_has_fixed_randomization_seed = 1;
 
           break;
 
