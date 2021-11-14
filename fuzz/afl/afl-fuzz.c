@@ -4892,6 +4892,7 @@ EXP_ST u8 common_fuzz_stuff(char** argv, u8* out_buf, u32 len) {
   }
 
   u8 *fn = alloc_printf("%s/%s/%08d.js", out_dir, path, olivine_input_generation_ctr);
+  ACTF("Writing to %s...", fn);
   int fd = open(fn, O_WRONLY | O_CREAT, 0600);
   ck_free(fn);
 
