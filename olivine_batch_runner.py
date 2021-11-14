@@ -5,17 +5,15 @@ import sys
 from typing import List
 
 from olivine_helpers import (
+    OLIVINE_BASEPATH,
     REDIS_PORT,
     TIMEOUT,
+    cmd_with_time_logging,
     execute,
     get_fuzz_target_path,
     v8_metrics_info,
     wait_until_tmux_session_closed,
 )
-
-LOG_ALL_OUTPUT = False
-
-bash_log_all_output = '>&2' if LOG_ALL_OUTPUT else ''
 
 # Usage:
 # python3 olivine_batch_runner.py start {jitCompilerCode} {untilNInputs} {seed}
@@ -25,14 +23,13 @@ bash_log_all_output = '>&2' if LOG_ALL_OUTPUT else ''
 # python3 olivine_batch_runner.py fuzz {jitCompilerCode} {untilNInputs} {seed}
 
 
-def get_lib_string(jit_compiler_code: str):
-    return ''
-    # die_corpus_path = '/home/jfmcoronel/die/DIE-corpus/'
+# def get_lib_string(jit_compiler_code: str):
+#     die_corpus_path = '/home/jfmcoronel/die/DIE-corpus/'
 
-    # if jit_compiler_code == 'ch':
-    #     return f'-lib={die_corpus_path}/lib.js -lib={die_corpus_path}/jsc.js -lib={die_corpus_path}/v8.js -lib={die_corpus_path}/ffx.js -lib={die_corpus_path}/chakra.js'
+#     if jit_compiler_code == 'ch':
+#         return f'-lib={die_corpus_path}/lib.js -lib={die_corpus_path}/jsc.js -lib={die_corpus_path}/v8.js -lib={die_corpus_path}/ffx.js -lib={die_corpus_path}/chakra.js'
 
-    # return f'{die_corpus_path}/lib.js {die_corpus_path}/jsc.js {die_corpus_path}/v8.js {die_corpus_path}/ffx.js {die_corpus_path}/chakra.js'
+#     return f'{die_corpus_path}/lib.js {die_corpus_path}/jsc.js {die_corpus_path}/v8.js {die_corpus_path}/ffx.js {die_corpus_path}/chakra.js'
 
 
 def run_windowed_slaves_in_current_session(cmds: List[str], prefix: str, persist: bool):
@@ -54,30 +51,42 @@ def run_windowed_slaves_in_current_session(cmds: List[str], prefix: str, persist
 
 def start(jit_compiler_code: str, until_n_inputs: int, seed: int):
     # Enables running each phase in a new tmux session
-    execute(f'tmux new-session -s populate -d "python3 ~/die/olivine_batch_runner.py populate {jit_compiler_code} {until_n_inputs} {seed}"')
+    execute(f'tmux new-session -s populate -d "python3 {OLIVINE_BASEPATH}/olivine_batch_runner.py populate {jit_compiler_code} {until_n_inputs} {seed}"')
 
     # Must wait for all slaves to finish
     wait_until_tmux_session_closed('populate', 60)
 
-    execute(f'tmux new-session -s fuzz -d "python3 ~/die/olivine_batch_runner.py fuzz {jit_compiler_code} {until_n_inputs} {seed}"')
+    execute(f'tmux new-session -s fuzz -d "python3 {OLIVINE_BASEPATH}/olivine_batch_runner.py fuzz {jit_compiler_code} {until_n_inputs} {seed}"')
 
 
 def populate(jit_compiler_code: str, until_n_inputs: int, seed: int):
     execute(f'echo FLUSHALL | redis-cli -p {REDIS_PORT}')
-    execute(f'cd ~/die && rm -rf ~/die/corpus/ && python3 ./fuzz/scripts/make_initial_corpus.py ./DIE-corpus ./corpus')
+    execute(f'cd {OLIVINE_BASEPATH} && rm -rf {OLIVINE_BASEPATH}/corpus/ && python3 ./fuzz/scripts/make_initial_corpus.py ./DIE-corpus ./corpus')
     execute('echo core | sudo tee /proc/sys/kernel/core_pattern')
 
-    cmd: List[str] = [
-        f'cd ~/die && rm -rf ~/die/output',
-        f'mkdir ~/die/output',
-        f'tmux rename-window -t populate-{{SLAVENUMBER}} prune-{{SLAVENUMBER}}',
-        # TODO: Remove me
-        '' if jit_compiler_code != 'v8' else f'python3 ~/die/olivine_batch_runner.py prune-v8-corpus {{SLAVENUMBER}} {jit_compiler_code} {until_n_inputs} {seed}',
-        f'tmux rename-window -t prune-{{SLAVENUMBER}} populate-{{SLAVENUMBER}}',
-        f'python3 ~/die/olivine_batch_runner.py populate-with-slave {{SLAVENUMBER}} {jit_compiler_code} {until_n_inputs} {seed}',
+    pre_cmds: List[str] = [
+        f'cd {OLIVINE_BASEPATH} && rm -rf {OLIVINE_BASEPATH}/output',
+        f'mkdir {OLIVINE_BASEPATH}/output',
     ]
 
-    run_windowed_slaves_in_current_session(cmd, 'populate', False)
+    prune_cmds: List[str] = [
+        f'tmux rename-window -t populate-{{SLAVENUMBER}} prune-{{SLAVENUMBER}}',
+        cmd_with_time_logging(
+            f'python3 {OLIVINE_BASEPATH}/olivine_batch_runner.py prune-v8-corpus {{SLAVENUMBER}} {jit_compiler_code} {until_n_inputs} {seed}',
+            '{OLIVINE_BASEPATH}/output-{{SLAVENUMBER}}/log-prune.txt',
+            True,
+        ),
+    ]
+
+    populate_cmds: List[str] = [
+        f'tmux rename-window -t prune-{{SLAVENUMBER}} populate-{{SLAVENUMBER}}',
+        f'python3 {OLIVINE_BASEPATH}/olivine_batch_runner.py populate-with-slave {{SLAVENUMBER}} {jit_compiler_code} {until_n_inputs} {seed}',
+    ]
+
+    cmds: List[str] = [*pre_cmds, *prune_cmds, *populate_cmds] if jit_compiler_code == 'v8' \
+                      else [*pre_cmds, *populate_cmds]
+
+    run_windowed_slaves_in_current_session(cmds, 'populate', False)
 
 
 def prune_v8_corpus_with_slave(n: str):
@@ -102,22 +111,43 @@ def prune_v8_corpus_with_slave(n: str):
 
 
 def populate_with_slave(n: str, fuzz_target_path: str, jit_compiler_code: str, until_n_inputs: int, seed: int):
-    lib_string = get_lib_string(jit_compiler_code)
+    populate_cmd = cmd_with_time_logging(
+        f'''./fuzz/afl/afl-fuzz -C -s {seed} -e {until_n_inputs} -j {jit_compiler_code} -m none -o output-{n} -i ./corpus/output-{n} '{fuzz_target_path}' @@''',
+        f'{OLIVINE_BASEPATH}/output-{n}/log-populate.txt',
+        False,
+    )
 
-    execute(f'''bash -c "{{ time ./fuzz/afl/afl-fuzz -C -s {seed} -e {until_n_inputs} -j {jit_compiler_code} -m none -o output-{n} -i ./corpus/output-{n} '{fuzz_target_path}' {lib_string} @@ ; }} 2> >(tee ~/die/output-{n}/time-populate.txt {bash_log_all_output}) {bash_log_all_output}"''')
+    execute(populate_cmd)
 
 
 def fuzz(jit_compiler_code: str, until_n_inputs: int, seed: int):
-    lib_string = get_lib_string(jit_compiler_code)
     fuzz_target_path = get_fuzz_target_path(jit_compiler_code)
 
     execute('echo core | sudo tee /proc/sys/kernel/core_pattern')
 
+    fuzz_cmd = cmd_with_time_logging(
+        f'''./fuzz/afl/afl-fuzz -s {seed} -e {until_n_inputs} -j {jit_compiler_code} -m none -o output '{fuzz_target_path}' @@''',
+        '{OLIVINE_BASEPATH}/output/log-fuzz.txt',
+        False,
+    )
+
+    optset_cmd = cmd_with_time_logging(
+        f'python3 {OLIVINE_BASEPATH}/olivine_slave_analysis.py optset {{SLAVENUMBER}} {jit_compiler_code}',
+        '{OLIVINE_BASEPATH}/output/log-analyze-optset.txt',
+        True,
+    )
+
+    coverage_cmd = cmd_with_time_logging(
+        f'python3 {OLIVINE_BASEPATH}/olivine_slave_analysis.py coverage {{SLAVENUMBER}} {jit_compiler_code}',
+        '{OLIVINE_BASEPATH}/output/log-analyze-coverage.txt',
+        True,
+    )
+
     cmds: List[str] = [
-        'cd ~/die',
-        f'''bash -c "{{{{ time ./fuzz/afl/afl-fuzz -s {seed} -e {until_n_inputs} -j {jit_compiler_code} -m none -o output '{fuzz_target_path}' {lib_string} @@ ; }}}} 2> >(tee ~/die/output/time-fuzz.txt {bash_log_all_output}) {bash_log_all_output}"''',
-        f'bash -c "{{{{ time python3 ~/die/olivine_slave_analysis.py optset {{SLAVENUMBER}} {jit_compiler_code} ; }}}} 2> >(tee ~/die/output/time-analyze-optset.txt >&2) >&2"',
-        f'bash -c "{{{{ time python3 ~/die/olivine_slave_analysis.py coverage {{SLAVENUMBER}} {jit_compiler_code} ; }}}} 2> >(tee ~/die/output/time-analyze-coverage.txt >&2) >&2"',
+        'cd {OLIVINE_BASEPATH}',
+        fuzz_cmd,
+        optset_cmd,
+        coverage_cmd,
     ]
 
     run_windowed_slaves_in_current_session(cmds, 'fuzz', True)

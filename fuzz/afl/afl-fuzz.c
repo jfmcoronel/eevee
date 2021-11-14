@@ -21,6 +21,7 @@
  */
 
 #include "olivine.h"
+#define OLIVINE_LOG_SEEDS // TODO: Remove
 
 #define AFL_MAIN
 #define MESSAGES_TO_STDOUT
@@ -397,7 +398,22 @@ static inline u32 UR(u32 limit) {
 
 #ifdef OLIVINE_COMMON
   if (olivine_has_fixed_randomization_seed) {
-    return random() % limit;
+    u32 ret = random() % limit;
+
+#ifdef OLIVINE_LOG_SEEDS
+    u8 *fn = alloc_printf("%s/log-seeds.txt", out_dir);
+    int fd = open(fn, O_WRONLY | O_APPEND, 0600);
+    ck_free(fn);
+
+    FILE *fp = fdopen(fd, "a");
+    if (!fp) PFATAL("fdopen() failed");
+    fprintf(fp, "%u\n", ret);
+
+    fclose(fp);
+    close(fd);
+#endif
+
+    return ret;
   }
 
   // TODO: Remove
@@ -3338,7 +3354,10 @@ static u8 save_if_interesting(char** argv, void* mem, u32 len, u8 fault) {
   }
 #endif
 
-  if (in_dir || (fault == crash_mode)) {
+// [jfmcoronel] Conditional seems to be unintentional
+#ifndef OLIVINE_COMMON
+  if (fault == crash_mode) {
+#endif
 
     /* Keep only if there are new bits in the map, add to queue for
        future fuzzing, etc. */
@@ -3421,7 +3440,10 @@ static u8 save_if_interesting(char** argv, void* mem, u32 len, u8 fault) {
     ck_free(cmdline);
 
     keeping = 1;
+// [jfmcoronel] Conditional seems to be unintentional
+#ifndef OLIVINE_COMMON
   }
+#endif
 
   switch (fault) {
 

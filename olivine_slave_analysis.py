@@ -6,6 +6,7 @@ from typing import List
 
 from olivine_helpers import (
     MetricsInfo,
+    OLIVINE_BASEPATH,
     TIMEOUT,
     execute,
     get_metrics_info,
@@ -17,7 +18,7 @@ from olivine_helpers import (
 # python3 olivine_slave_analysis.py coverage <n> <jit_compiler_code>
 
 def generate_optsets(n: str, metrics_info: MetricsInfo):
-    output_basepath = f'~/die/output-{n}/@optset'
+    output_basepath = f'{OLIVINE_BASEPATH}/output-{n}/@optset'
     fuzz_input_basepath = f'/home/jfmcoronel/die/output-{n}/@all_inputs/*.js'
 
     cmd: List[str] = [
@@ -39,7 +40,7 @@ def generate_optsets(n: str, metrics_info: MetricsInfo):
 
 
 def generate_serial_coverage(metrics_info: MetricsInfo):
-    output_basepath = f'~/die/output-summary/'
+    output_basepath = f'{OLIVINE_BASEPATH}/output-summary/'
 
     cmd_before: List[str] = [
         f'rm -rf {output_basepath}',
@@ -78,7 +79,7 @@ def generate_own_coverage(n: str, metrics_info: MetricsInfo):
 
 
 def generate_coverage_summary(metrics_info: MetricsInfo):
-    output_basepath = f'~/die/output-summary/'
+    output_basepath = f'{OLIVINE_BASEPATH}/output-summary/'
 
     cmd_before: List[str] = [
         f'rm -rf {output_basepath}',
@@ -91,7 +92,7 @@ def generate_coverage_summary(metrics_info: MetricsInfo):
 
     cmd_after: List[str] = [
         f'cd {metrics_info.cov_source_code_path}',
-        f'/usr/bin/lcov --capture --no-checksum --directory {metrics_info.cov_source_code_path} --output-file {lcovinfo_path} --gcov-tool ~/die/gcov_for_clang.sh',
+        f'/usr/bin/lcov --capture --no-checksum --directory {metrics_info.cov_source_code_path} --output-file {lcovinfo_path} --gcov-tool {OLIVINE_BASEPATH}/gcov_for_clang.sh',
         f'genhtml {lcovinfo_path} --output-directory {output_basepath} --ignore-errors=source',
         f'{{ echo keys "*" | redis-cli ; }} > {output_basepath}/keys.txt',
     ]
@@ -115,9 +116,9 @@ def main():
         if int(n) == 1:
             execute(f'tmux rename-window -t coverage-{n} summary-{n}')
 
-            wait_until_tmux_windows_closed('fuzz', 60)
-            wait_until_tmux_windows_closed('optset', 60)
-            wait_until_tmux_windows_closed('coverage', 60)
+            wait_until_tmux_windows_closed('fuzz', 20)
+            wait_until_tmux_windows_closed('optset', 20)
+            wait_until_tmux_windows_closed('coverage', 20)
 
             generate_coverage_summary(metrics_info)
             execute(f'tmux rename-window -t summary-{n} done-{n}')
