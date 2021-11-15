@@ -138,17 +138,25 @@ def fuzz(jit_compiler_code: str, until_n_inputs: int, seed: int):
         must_have_double_braces=True,
     )
 
-    optset_cmd = cmd_with_time_logging(
-        f'python3 {OLIVINE_BASEPATH}/olivine_slave_analysis.py optset {{SLAVENUMBER}} {jit_compiler_code}',
-        f'{OLIVINE_BASEPATH}/OLIVINE_SLAVE_OUTPUT_PATH/log-analyze-optset.txt',
-        should_log_all_output=True,
-        must_have_double_braces=True,
-        show_errors_on_screen=False,
-    )
+    # optset_cmd = cmd_with_time_logging(
+    #     f'python3 {OLIVINE_BASEPATH}/olivine_slave_analysis.py optset {{SLAVENUMBER}} {jit_compiler_code}',
+    #     f'{OLIVINE_BASEPATH}/OLIVINE_SLAVE_OUTPUT_PATH/log-analyze-optset.txt',
+    #     should_log_all_output=True,
+    #     must_have_double_braces=True,
+    #     show_errors_on_screen=False,
+    # )
 
-    coverage_cmd = cmd_with_time_logging(
-        f'python3 {OLIVINE_BASEPATH}/olivine_slave_analysis.py coverage {{SLAVENUMBER}} {jit_compiler_code}',
-        f'{OLIVINE_BASEPATH}/OLIVINE_SLAVE_OUTPUT_PATH/log-analyze-coverage.txt',
+    # coverage_cmd = cmd_with_time_logging(
+    #     f'python3 {OLIVINE_BASEPATH}/olivine_slave_analysis.py coverage {{SLAVENUMBER}} {jit_compiler_code}',
+    #     f'{OLIVINE_BASEPATH}/OLIVINE_SLAVE_OUTPUT_PATH/log-analyze-coverage.txt',
+    #     should_log_all_output=True,
+    #     must_have_double_braces=True,
+    #     show_errors_on_screen=False,
+    # )
+
+    single_pass_optset_coverage_cmd = cmd_with_time_logging(
+        f'python3 {OLIVINE_BASEPATH}/olivine_slave_analysis.py analysis-singlepass {{SLAVENUMBER}} {jit_compiler_code}',
+        f'{OLIVINE_BASEPATH}/OLIVINE_SLAVE_OUTPUT_PATH/log-analysis-singlepass.txt',
         should_log_all_output=True,
         must_have_double_braces=True,
         show_errors_on_screen=False,
@@ -157,8 +165,9 @@ def fuzz(jit_compiler_code: str, until_n_inputs: int, seed: int):
     cmds: List[str] = [
         f'cd {OLIVINE_BASEPATH}',
         fuzz_cmd,
-        optset_cmd,
-        coverage_cmd,
+        single_pass_optset_coverage_cmd,
+        # optset_cmd,
+        # coverage_cmd,
     ]
 
     run_windowed_slaves_in_current_session(cmds, 'fuzz', True)

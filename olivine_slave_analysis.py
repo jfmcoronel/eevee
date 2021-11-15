@@ -18,6 +18,33 @@ from olivine_helpers import (
 # python3 olivine_slave_analysis.py optset <n> <jit_compiler_code>
 # python3 olivine_slave_analysis.py coverage <n> <jit_compiler_code>
 
+def do_own_analysis_singlepass(n: str, metrics_info: MetricsInfo):
+    def generate_for(input_basepath: str, prefix: str):
+        for full_js_path in sorted(glob.glob(input_basepath)):
+            js_name_ext = os.path.basename(full_js_path)
+            js_basename = os.path.splitext(js_name_ext)[0]
+            optset_output_path = os.path.join(output_basepath, f'{prefix}{js_basename}.txt')
+
+            dump_suffix = f'>{optset_output_path} 2>&1; echo -e "\\n$?" >> {optset_output_path}'
+            actual_cmd = f'timeout {TIMEOUT} {metrics_info.cov_target_path} {metrics_info.optset_flags} {full_js_path} {dump_suffix}'
+
+            execute(actual_cmd)
+
+    output_basepath = f'{OLIVINE_BASEPATH}/{OLIVINE_SLAVE_OUTPUT_DIR_PREFIX}{n}/@optset'
+    generated_inputs_basepath = f'/home/jfmcoronel/die/{OLIVINE_SLAVE_OUTPUT_DIR_PREFIX}{n}/@generated_inputs/*.js'
+    selected_inputs_basepath = f'/home/jfmcoronel/die/{OLIVINE_SLAVE_OUTPUT_DIR_PREFIX}{n}/@selected_inputs/*.js'
+
+    cmd: List[str] = [
+        f'rm -rf {output_basepath}',
+        f'mkdir {output_basepath}',
+        f'cd {output_basepath}',
+    ]
+    execute(' ; '.join(cmd))
+
+    generate_for(generated_inputs_basepath, 'generated_')
+    generate_for(selected_inputs_basepath, 'selected_')
+
+
 def generate_optsets(n: str, metrics_info: MetricsInfo):
     def generate_for(input_basepath: str, prefix: str):
         for full_js_path in sorted(glob.glob(input_basepath)):
@@ -57,7 +84,6 @@ def generate_own_coverage(n: str, metrics_info: MetricsInfo):
     generate_for(f'/home/jfmcoronel/die/{OLIVINE_SLAVE_OUTPUT_DIR_PREFIX}{n}/@selected_inputs/*.js')
 
 
-
 def generate_coverage_summary(metrics_info: MetricsInfo):
     output_basepath = OLIVINE_SUMMARY_BASEPATH
 
@@ -92,6 +118,24 @@ def main():
     elif cmd == 'coverage':
         execute(f'tmux rename-window -t done-{n} coverage-{n}')
         generate_own_coverage(n, metrics_info)
+
+        if int(n) == 1:
+            execute(f'tmux rename-window -t coverage-{n} summary-{n}')
+
+            wait_until_tmux_windows_closed('fuzz', 10)
+            wait_until_tmux_windows_closed('optset', 10)
+            wait_until_tmux_windows_closed('coverage', 10)
+
+            generate_coverage_summary(metrics_info)
+            execute(f'tmux rename-window -t summary-{n} done-{n}')
+            execute('uptime | tee {OLIVINE_SUMMARY_BASEPATH}/time-uptime.txt')
+
+        else:
+            execute(f'tmux rename-window -t coverage-{n} done-{n}')
+
+    elif cmd == 'analysis-singlepass':
+        execute(f'tmux rename-window -t done-{n} coverage-{n}')
+        do_own_analysis_singlepass(n, metrics_info)
 
         if int(n) == 1:
             execute(f'tmux rename-window -t coverage-{n} summary-{n}')
