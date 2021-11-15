@@ -3329,14 +3329,15 @@ cleanup:
 #ifdef OLIVINE_COMMON
 
 static u64 olivine_get_fuzz_input_hits() {
-	u8* fn = alloc_printf("%s/.olivine_dump", out_dir);
-	u8* cmdline = alloc_printf("python3 /home/jfmcoronel/die/olivine_hook.py %d \"%s\"", olivine_jit_compiler_type, fn);
-	execute_sh(cmdline);
+	/*u8* fn = alloc_printf("%s/.olivine_dump", out_dir);*/
+	/*u8* cmdline = alloc_printf("python3 /home/jfmcoronel/die/olivine_hook.py %d \"%s\"", olivine_jit_compiler_type, fn);*/
+	/*execute_sh(cmdline);*/
 
   u64 count;
-  int fd = open(fn, O_RDONLY);
-  read(fd, &count, sizeof(count));
-  close(fd);
+  /*int fd = open(fn, O_RDONLY);*/
+  /*read(fd, &count, sizeof(count));*/
+  /*close(fd);*/
+  read(olivine_jit_dump_fd, &count, sizeof(count));
 
   return count;
 }
@@ -7766,8 +7767,8 @@ EXP_ST void setup_dirs_fds(void) {
   ck_free(tmp);
 
 	tmp = alloc_printf("%s/.olivine_dump", out_dir);
-  olivine_jit_dump_fd = open(tmp, O_RDWR);
-  if (olivine_jit_dump_fd < 0) PFATAL("Unable to open %s/.olivine_dump", tmp);
+  olivine_jit_dump_fd = open(tmp, O_RDWR | O_CREAT);
+  if (olivine_jit_dump_fd < 0) PFATAL("Unable to open %s", tmp);
   ck_free(tmp);
 #endif
 
