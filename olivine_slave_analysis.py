@@ -7,6 +7,7 @@ from olivine_helpers import (
     MetricsInfo,
     OLIVINE_BASEPATH,
     OLIVINE_SLAVE_OUTPUT_DIR_PREFIX,
+    OLIVINE_SUMMARY_BASEPATH,
     TIMEOUT,
     execute,
     get_metrics_info,
@@ -58,7 +59,7 @@ def generate_own_coverage(n: str, metrics_info: MetricsInfo):
 
 
 def generate_coverage_summary(metrics_info: MetricsInfo):
-    output_basepath = f'{OLIVINE_BASEPATH}/{OLIVINE_SLAVE_OUTPUT_DIR_PREFIX}summary/'
+    output_basepath = OLIVINE_SUMMARY_BASEPATH
 
     cmd_before: List[str] = [
         f'rm -rf {output_basepath}',
@@ -101,6 +102,7 @@ def main():
 
             generate_coverage_summary(metrics_info)
             execute(f'tmux rename-window -t summary-{n} done-{n}')
+            execute('uptime > {OLIVINE_SUMMARY_BASEPATH}/time-uptime.txt')
 
         else:
             execute(f'tmux rename-window -t coverage-{n} done-{n}')
