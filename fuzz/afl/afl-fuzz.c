@@ -3334,13 +3334,18 @@ static u64 olivine_get_fuzz_input_hits() {
 	/*execute_sh(cmdline);*/
 
   u64 count;
+  int lseek_ret;
   /*int fd = open(fn, O_RDONLY);*/
   /*read(fd, &count, sizeof(count));*/
   /*close(fd);*/
 
-  lseek(olivine_jit_dump_fd, 0, SEEK_SET);
+  lseek_ret = lseek(olivine_jit_dump_fd, 0, SEEK_SET);
+  if (lseek_ret < 0) PFATAL("Failed to lseek before reading");
+
   read(olivine_jit_dump_fd, &count, sizeof(count));
-  lseek(olivine_jit_dump_fd, 0, SEEK_SET);
+
+  lseek_ret = lseek(olivine_jit_dump_fd, 0, SEEK_SET);
+  if (lseek_ret < 0) PFATAL("Failed to lseek after reading");
 
 	/*u8 *tmp = alloc_printf("%s/.olivine_dump", out_dir);*/
   /*s32 tmp_fd = open(tmp, O_RDONLY);*/
