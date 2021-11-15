@@ -174,7 +174,10 @@ def main():
         )
         execute(updater_cmd)
 
-        if not os.path.exists(os.path.join(OLIVINE_BASEPATH, 'fuzz', 'afl', 'afl-fuzz')):
+        afl_path = os.path.join(OLIVINE_BASEPATH, 'fuzz', 'afl', 'afl-fuzz')
+        print(afl_path)
+
+        if not os.path.exists(afl_path):
             with open(os.path.join(os.path.expanduser('~'), 'log-start.txt'), 'r') as f:
                 print(f.read())
 
