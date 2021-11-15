@@ -4,7 +4,7 @@ from typing import Dict, NamedTuple
 
 TIMEOUT = 10
 REDIS_PORT = 6379
-OLIVINE_BASEPATH = '~/die/'
+OLIVINE_BASEPATH = os.path.expanduser('~/die/')
 OLIVINE_SLAVE_OUTPUT_DIR_PREFIX = 'output-'
 
 
