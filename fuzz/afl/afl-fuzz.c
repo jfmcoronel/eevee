@@ -3337,7 +3337,13 @@ static u64 olivine_get_fuzz_input_hits() {
   /*int fd = open(fn, O_RDONLY);*/
   /*read(fd, &count, sizeof(count));*/
   /*close(fd);*/
-  read(olivine_jit_dump_fd, &count, sizeof(count));
+
+  /*read(olivine_jit_dump_fd, &count, sizeof(count));*/
+
+	u8 *tmp = alloc_printf("%s/.olivine_dump", out_dir);
+  s32 tmp_fd = open(tmp, O_RDONLY);
+  if (tmp_fd < 0) PFATAL("Unable to open %s", tmp);
+  read(tmp_fd, &count, sizeof(count));
 
   return count;
 }
