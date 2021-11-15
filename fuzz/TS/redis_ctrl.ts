@@ -119,7 +119,7 @@ function getNextTestcase(jsFile: string, generationNumberStr: string) {
                         // OLIVINE: Record all selections
                         const basePath = path.dirname(jsFile);
                         const actualLogPath = `${basePath}/@selected_inputs/${generationNumberStr.padStart(8, "0")}.js`
-                        console.log(actualLogPath)
+                        console.log("New and old: " + actualLogPath)
                         fs.writeFileSync(actualLogPath, fileObj.js);
 
                         next(true); // Early finish
@@ -140,6 +140,12 @@ function getNextTestcase(jsFile: string, generationNumberStr: string) {
                         const fileObj = JSON.parse(res);
                         fs.writeFileSync(jsFile, fileObj.js);
                         fs.writeFileSync(typeFile, fileObj.type);
+
+                        // OLIVINE: Record all selections
+                        const basePath = path.dirname(jsFile);
+                        const actualLogPath = `${basePath}/@selected_inputs/${generationNumberStr.padStart(8, "0")}.js`
+                        console.log("Just old: " + actualLogPath)
+                        fs.writeFileSync(actualLogPath, fileObj.js);
                     } else {
                         console.log("[-] getNextTestcase - Need to populate first");
                     }
