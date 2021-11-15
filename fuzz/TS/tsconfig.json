@@ -5,7 +5,8 @@
     "sourceMap": true,
     "lib": [
       "dom",
-      "es7"
+      "es7",
+      "es2017" // [jfmcoronel] Needed for padStart
     ],
   },
   "includes": [
