@@ -117,7 +117,7 @@ def populate_with_slave(n: str, fuzz_target_path: str, jit_compiler_code: str, u
     populate_cmd = cmd_with_time_logging(
         f'''./fuzz/afl/afl-fuzz -C -s {seed} -e {until_n_inputs} -j {jit_compiler_code} -m none -o {OLIVINE_SLAVE_OUTPUT_DIR_PREFIX}{n} -i ./corpus/{OLIVINE_SLAVE_OUTPUT_DIR_PREFIX}{n} '{fuzz_target_path}' @@''',
         f'{OLIVINE_BASEPATH}/{OLIVINE_SLAVE_OUTPUT_DIR_PREFIX}{n}/log-populate.txt',
-        should_log_all_output=False,
+        should_log_all_output=True,
         must_have_double_braces=False,
     )
 
@@ -166,7 +166,21 @@ def main():
 
     if cmd == 'start':
         # Update self first
-        execute(f'cd {OLIVINE_BASEPATH} && git pull && ./compile.sh')
+        updater_cmd = cmd_with_time_logging(
+            f'cd {OLIVINE_BASEPATH} && git pull && ./compile.sh',
+            f'~/log-start.txt',
+            should_log_all_output=True,
+            must_have_double_braces=True,
+        )
+        execute(updater_cmd)
+
+        if not os.path.exists(os.path.join(OLIVINE_BASEPATH, 'fuzz', 'afl', 'afl-fuzz')):
+            with open(os.path.join(os.path.expanduser('~'), 'log-start'), 'r') as f:
+                print(f.read())
+
+            print('\nAFL executable does not exist')
+            exit(-1)
+
         # Reexecute self
         execute(f"python3 {sys.argv[0]} true-start {' '.join(sys.argv[2:])}")
 
