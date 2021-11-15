@@ -6,7 +6,7 @@ TIMEOUT = 10
 REDIS_PORT = 6379
 OLIVINE_BASEPATH = os.path.expanduser('~/die/')
 OLIVINE_SLAVE_OUTPUT_DIR_PREFIX = 'output-'
-
+OLIVINE_SUMMARY_BASEPATH = f'{OLIVINE_BASEPATH}/{OLIVINE_SLAVE_OUTPUT_DIR_PREFIX}summary/'
 
 # Python 3.6 has no dataclasses
 class MetricsInfo(NamedTuple):
@@ -37,12 +37,14 @@ metrics_info_mapping: Dict[str, MetricsInfo] = {
 }
 
 
-def cmd_with_time_logging(cmd: str, log_path: str, should_log_all_output: bool, must_have_double_braces: bool):
+def cmd_with_time_logging(cmd: str, log_path: str, should_log_all_output: bool, must_have_double_braces: bool, show_errors_on_screen: bool = True):
     log_all_output = '>&2' if should_log_all_output else ''
+    suppressor = '' if show_errors_on_screen else '>/dev/null'
 
-    # TODO: Refactor
-    ret = f'''bash -c "{{{{ time {{{{ {cmd} ; }}}} ; }}}} 2> >(tee {log_path} {log_all_output}) {log_all_output}"''' if must_have_double_braces \
-          else f'''bash -c "{{ time {{ {cmd} ; }} ; }} 2> >(tee {log_path} {log_all_output}) {log_all_output}"'''
+    braced_cmd = f'{{{{ time {{{{ {cmd} ; }}}} ; }}}}' if must_have_double_braces \
+                 else f'{{ time {{ {cmd} ; }} ; }}'
+
+    ret = f'''bash -c "{braced_cmd} 2> >(tee {log_path} {suppressor}) {log_all_output}"'''
 
     print('@@@ Generated:', ret)
 

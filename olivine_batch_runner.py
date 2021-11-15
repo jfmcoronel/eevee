@@ -141,6 +141,7 @@ def fuzz(jit_compiler_code: str, until_n_inputs: int, seed: int):
         f'{OLIVINE_BASEPATH}/OLIVINE_SLAVE_OUTPUT_PATH/log-analyze-optset.txt',
         should_log_all_output=True,
         must_have_double_braces=True,
+        show_errors_on_screen=False,
     )
 
     coverage_cmd = cmd_with_time_logging(
@@ -148,6 +149,7 @@ def fuzz(jit_compiler_code: str, until_n_inputs: int, seed: int):
         f'{OLIVINE_BASEPATH}/OLIVINE_SLAVE_OUTPUT_PATH/log-analyze-coverage.txt',
         should_log_all_output=True,
         must_have_double_braces=True,
+        show_errors_on_screen=False,
     )
 
     cmds: List[str] = [
