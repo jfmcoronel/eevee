@@ -102,7 +102,7 @@ def main():
 
             generate_coverage_summary(metrics_info)
             execute(f'tmux rename-window -t summary-{n} done-{n}')
-            execute('uptime > {OLIVINE_SUMMARY_BASEPATH}/time-uptime.txt')
+            execute('uptime | tee {OLIVINE_SUMMARY_BASEPATH}/time-uptime.txt')
 
         else:
             execute(f'tmux rename-window -t coverage-{n} done-{n}')
