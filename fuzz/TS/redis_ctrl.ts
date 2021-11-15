@@ -136,7 +136,9 @@ function getNextTestcase(jsFile: string, generationNumberStr: string) {
 
                         // OLIVINE: Record all selections
                         const basePath = path.dirname(jsFile);
-                        fs.writeFileSync(`${basePath}/@selected_inputs/${generationNumberStr.padStart(8, "0")}.js`, fileObj.js);
+                        const actualLogPath = `${basePath}/@selected_inputs/${generationNumberStr.padStart(8, "0")}.js`
+                        console.log(actualLogPath)
+                        fs.writeFileSync(actualLogPath, fileObj.js);
                     } else {
                         console.log("[-] getNextTestcase - Need to populate first");
                     }
