@@ -95,9 +95,9 @@ def main():
         if int(n) == 1:
             execute(f'tmux rename-window -t coverage-{n} summary-{n}')
 
-            wait_until_tmux_windows_closed('fuzz', 20)
-            wait_until_tmux_windows_closed('optset', 20)
-            wait_until_tmux_windows_closed('coverage', 20)
+            wait_until_tmux_windows_closed('fuzz', 10)
+            wait_until_tmux_windows_closed('optset', 10)
+            wait_until_tmux_windows_closed('coverage', 10)
 
             generate_coverage_summary(metrics_info)
             execute(f'tmux rename-window -t summary-{n} done-{n}')
