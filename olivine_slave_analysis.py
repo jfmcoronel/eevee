@@ -1,5 +1,4 @@
 import glob
-import multiprocessing
 import os
 import sys
 from typing import List
@@ -19,8 +18,20 @@ from olivine_helpers import (
 # python3 olivine_slave_analysis.py coverage <n> <jit_compiler_code>
 
 def generate_optsets(n: str, metrics_info: MetricsInfo):
+    def generate_for(input_basepath: str, prefix: str):
+        for full_js_path in sorted(glob.glob(input_basepath)):
+            js_name_ext = os.path.basename(full_js_path)
+            js_basename = os.path.splitext(js_name_ext)[0]
+            optset_output_path = os.path.join(output_basepath, f'{prefix}{js_basename}.txt')
+
+            dump_suffix = f'>{optset_output_path} 2>&1; echo -e "\\n$?" >> {optset_output_path}'
+            actual_cmd = f'timeout {TIMEOUT} {metrics_info.fuzz_target_path} {metrics_info.optset_flags} {full_js_path} {dump_suffix}'
+
+            execute(actual_cmd)
+
     output_basepath = f'{OLIVINE_BASEPATH}/{OLIVINE_SLAVE_OUTPUT_DIR_PREFIX}{n}/@optset'
-    fuzz_input_basepath = f'/home/jfmcoronel/die/{OLIVINE_SLAVE_OUTPUT_DIR_PREFIX}{n}/@all_inputs/*.js'
+    generated_inputs_basepath = f'/home/jfmcoronel/die/{OLIVINE_SLAVE_OUTPUT_DIR_PREFIX}{n}/@generated_inputs/*.js'
+    selected_inputs_basepath = f'/home/jfmcoronel/die/{OLIVINE_SLAVE_OUTPUT_DIR_PREFIX}{n}/@selected_inputs/*.js'
 
     cmd: List[str] = [
         f'rm -rf {output_basepath}',
@@ -29,54 +40,21 @@ def generate_optsets(n: str, metrics_info: MetricsInfo):
     ]
     execute(' ; '.join(cmd))
 
-    for full_js_path in sorted(glob.glob(fuzz_input_basepath)):
-        js_name_ext = os.path.basename(full_js_path)
-        js_basename = os.path.splitext(js_name_ext)[0]
-        optset_output_path = os.path.join(output_basepath, f'{js_basename}.txt')
-
-        dump_suffix = f'>{optset_output_path} 2>&1; echo -e "\\n$?" >> {optset_output_path}'
-        actual_cmd = f'timeout {TIMEOUT} {metrics_info.fuzz_target_path} {metrics_info.optset_flags} {full_js_path} {dump_suffix}'
-
-        execute(actual_cmd)
-
-
-def generate_serial_coverage(metrics_info: MetricsInfo):
-    output_basepath = f'{OLIVINE_BASEPATH}/{OLIVINE_SLAVE_OUTPUT_DIR_PREFIX}summary/'
-
-    cmd_before: List[str] = [
-        f'rm -rf {output_basepath}',
-        f'mkdir {output_basepath}',
-        f'cd {output_basepath}',
-    ]
-    execute(' ; '.join(cmd_before))
-
-    for n in range(1, multiprocessing.cpu_count()):
-        n = str(n).zfill(2)
-
-        fuzz_input_basepath = f'/home/jfmcoronel/die/{OLIVINE_SLAVE_OUTPUT_DIR_PREFIX}{n}/@all_inputs/*.js'
-
-        for full_js_path in sorted(glob.glob(fuzz_input_basepath)):
-            actual_cmd = f'timeout {TIMEOUT} {metrics_info.fuzz_target_path} {full_js_path}'
-            execute(actual_cmd)
-
-    lcovinfo_path = os.path.join(output_basepath, '.lcovinfo')
-
-    cmd_after: List[str] = [
-        f'cd {metrics_info.cov_source_code_path}',
-        f'/usr/bin/lcov --capture --no-checksum --directory {metrics_info.cov_source_code_path} --output-file {lcovinfo_path} --gcov-tool ~/gcov_for_clang.sh',
-        f'genhtml {lcovinfo_path} --output-directory {output_basepath} --ignore-errors=source',
-    ]
-    execute(' ; '.join(cmd_after))
+    generate_for(generated_inputs_basepath, 'generated_')
+    generate_for(selected_inputs_basepath, 'selected_')
 
 
 def generate_own_coverage(n: str, metrics_info: MetricsInfo):
+    def generate_for(input_basepath: str):
+        for full_js_path in sorted(glob.glob(input_basepath)):
+            actual_cmd = f'timeout {TIMEOUT} {metrics_info.cov_target_path} {full_js_path}'
+            execute(actual_cmd)
+
     n = str(n).zfill(2)
 
-    fuzz_input_basepath = f'/home/jfmcoronel/die/{OLIVINE_SLAVE_OUTPUT_DIR_PREFIX}{n}/@all_inputs/*.js'
+    generate_for(f'/home/jfmcoronel/die/{OLIVINE_SLAVE_OUTPUT_DIR_PREFIX}{n}/@generated_inputs/*.js')
+    generate_for(f'/home/jfmcoronel/die/{OLIVINE_SLAVE_OUTPUT_DIR_PREFIX}{n}/@selected_inputs/*.js')
 
-    for full_js_path in sorted(glob.glob(fuzz_input_basepath)):
-        actual_cmd = f'timeout {TIMEOUT} {metrics_info.cov_target_path} {full_js_path}'
-        execute(actual_cmd)
 
 
 def generate_coverage_summary(metrics_info: MetricsInfo):
