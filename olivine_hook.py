@@ -14,6 +14,7 @@ jit_compiler_type_number = int(sys.argv[1])
 output_basepath = os.path.dirname(sys.argv[2])
 jit_compiler_feedback_filepath = sys.argv[2]
 current_fuzz_input_filepath = os.path.join(output_basepath, ".cur_input")
+key_log_path = os.path.join(output_basepath, "log_keys.txt")
 
 
 def get_jsc_key(lines: List[str]):
@@ -148,3 +149,6 @@ with open(jit_compiler_feedback_filepath, 'wb') as f:
         f.write((0).to_bytes(8, 'little'))
     else:
         f.write(count.to_bytes(8, 'little'))
+
+with open(key_log_path, 'a') as f:
+    f.write(key + '\n')
