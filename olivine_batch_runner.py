@@ -170,7 +170,7 @@ def main():
             f'cd {OLIVINE_BASEPATH} && git pull && ./compile.sh',
             f'~/log-start.txt',
             should_log_all_output=True,
-            must_have_double_braces=True,
+            must_have_double_braces=False,
         )
         execute(updater_cmd)
 
