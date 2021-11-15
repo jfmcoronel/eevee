@@ -7767,7 +7767,7 @@ EXP_ST void setup_dirs_fds(void) {
   ck_free(tmp);
 
 	tmp = alloc_printf("%s/.olivine_dump", out_dir);
-  olivine_jit_dump_fd = open(tmp, O_RDWR | O_CREAT);
+  olivine_jit_dump_fd = open(tmp, O_RDWR | O_CREAT, 0600);
   if (olivine_jit_dump_fd < 0) PFATAL("Unable to open %s", tmp);
   ck_free(tmp);
 #endif
