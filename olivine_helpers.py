@@ -55,6 +55,10 @@ def get_fuzz_target_path(jit_compiler_code: str):
     return metrics_info_mapping[jit_compiler_code].fuzz_target_path
 
 
+def get_fuzz_target_flags(jit_compiler_code: str):
+    return metrics_info_mapping[jit_compiler_code].optset_flags
+
+
 def wait_until_tmux_windows_closed(window_name: str, interval: int = 60):
     while True:
         output = os.popen('tmux lsw').read()

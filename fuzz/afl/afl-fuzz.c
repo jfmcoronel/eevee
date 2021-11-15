@@ -21,14 +21,6 @@
  */
 
 #include "olivine.h"
-#define OLIVINE_LOG_SEEDS // TODO: Remove
-
-#ifdef OLIVINE_COMMON
-// Stop after generating N inputs
-int olivine_until_n_inputs = 0;
-int olivine_input_generation_ctr = 0;
-int olivine_round_ctr = 0;  // Number of fuzz_js invocations
-#endif
 
 #define AFL_MAIN
 #define MESSAGES_TO_STDOUT
@@ -92,14 +84,20 @@ int olivine_round_ctr = 0;  // Number of fuzz_js invocations
 #endif /* ^AFL_LIB */
 
 #ifdef OLIVINE_COMMON
-#define OLIVINE_JIT_COMPILER_NONE 0
-#define OLIVINE_JIT_COMPILER_JSC 1
-#define OLIVINE_JIT_COMPILER_V8 2
-#define OLIVINE_JIT_COMPILER_CH 3
+#  define OLIVINE_JIT_COMPILER_NONE 0
+#  define OLIVINE_JIT_COMPILER_JSC 1
+#  define OLIVINE_JIT_COMPILER_V8 2
+#  define OLIVINE_JIT_COMPILER_CH 3
+
+int olivine_until_n_inputs = 0;
+int olivine_input_generation_ctr = 0;
+int olivine_round_ctr = 0;
 int olivine_has_fixed_randomization_seed = 0;
 u32 olivine_randomization_seed = 0;
 int olivine_jit_compiler_type = OLIVINE_JIT_COMPILER_NONE;
 u64 olivine_verdict = 0;
+
+static s32 olivine_jit_dump_fd = -1;
 #endif
 
 /* Lots of globals, but mostly for the status UI and other things where it
@@ -2126,8 +2124,13 @@ EXP_ST void init_forkserver(char** argv) {
 
     setsid();
 
+#ifdef OLIVINE_COMMON
+     dup2(olivine_jit_dump_fd, 1);
+     dup2(olivine_jit_dump_fd, 2);
+#else
      dup2(dev_null_fd, 1);
      dup2(dev_null_fd, 2);
+#endif
 
     if (out_file) {
 
@@ -7760,6 +7763,11 @@ EXP_ST void setup_dirs_fds(void) {
 
   tmp = alloc_printf("%s/@filtered_seeds", out_dir);
   if (mkdir(tmp, 0700) && errno != EEXIST) PFATAL("Unable to create '%s'", tmp);
+  ck_free(tmp);
+
+	tmp = alloc_printf("%s/.olivine_dump", out_dir);
+  olivine_jit_dump_fd = open(tmp, O_RDWR);
+  if (olivine_jit_dump_fd < 0) PFATAL("Unable to open %s/.olivine_dump", tmp);
   ck_free(tmp);
 #endif
 

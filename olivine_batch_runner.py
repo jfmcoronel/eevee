@@ -11,6 +11,7 @@ from olivine_helpers import (
     TIMEOUT,
     cmd_with_time_logging,
     execute,
+    get_fuzz_target_flags,
     get_fuzz_target_path,
     v8_metrics_info,
     wait_until_tmux_session_closed,
@@ -24,13 +25,13 @@ from olivine_helpers import (
 # python3 olivine_batch_runner.py fuzz {jitCompilerCode} {untilNInputs} {seed}
 
 
-# def get_lib_string(jit_compiler_code: str):
-#     die_corpus_path = '/home/jfmcoronel/die/DIE-corpus/'
+def get_lib_string(jit_compiler_code: str):
+    die_corpus_path = '/home/jfmcoronel/die/DIE-corpus/'
 
-#     if jit_compiler_code == 'ch':
-#         return f'-lib={die_corpus_path}/lib.js -lib={die_corpus_path}/jsc.js -lib={die_corpus_path}/v8.js -lib={die_corpus_path}/ffx.js -lib={die_corpus_path}/chakra.js'
+    if jit_compiler_code == 'ch':
+        return f'-lib={die_corpus_path}/lib.js -lib={die_corpus_path}/jsc.js -lib={die_corpus_path}/v8.js -lib={die_corpus_path}/ffx.js -lib={die_corpus_path}/chakra.js'
 
-#     return f'{die_corpus_path}/lib.js {die_corpus_path}/jsc.js {die_corpus_path}/v8.js {die_corpus_path}/ffx.js {die_corpus_path}/chakra.js'
+    return f'{die_corpus_path}/lib.js {die_corpus_path}/jsc.js {die_corpus_path}/v8.js {die_corpus_path}/ffx.js {die_corpus_path}/chakra.js'
 
 
 def run_windowed_slaves_in_current_session(cmds: List[str], prefix: str, persist: bool):
@@ -126,11 +127,12 @@ def populate_with_slave(n: str, fuzz_target_path: str, jit_compiler_code: str, u
 
 def fuzz(jit_compiler_code: str, until_n_inputs: int, seed: int):
     fuzz_target_path = get_fuzz_target_path(jit_compiler_code)
+    fuzz_target_flags = get_fuzz_target_flags(jit_compiler_code)
 
     execute('echo core | sudo tee /proc/sys/kernel/core_pattern')
 
     fuzz_cmd = cmd_with_time_logging(
-        f'''./fuzz/afl/afl-fuzz -s {seed} -e {until_n_inputs} -j {jit_compiler_code} -m none -o OLIVINE_SLAVE_OUTPUT_PATH '{fuzz_target_path}' @@''',
+        f'''./fuzz/afl/afl-fuzz -s {seed} -e {until_n_inputs} -j {jit_compiler_code} -m none -o OLIVINE_SLAVE_OUTPUT_PATH '{fuzz_target_path}' {fuzz_target_flags} @@''',
         f'{OLIVINE_BASEPATH}/OLIVINE_SLAVE_OUTPUT_PATH/log-fuzz.txt',
         should_log_all_output=False,
         must_have_double_braces=True,
