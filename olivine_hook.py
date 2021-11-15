@@ -151,4 +151,4 @@ with open(jit_compiler_feedback_filepath, 'wb') as f:
         f.write(count.to_bytes(8, 'little'))
 
 with open(key_log_path, 'a') as f:
-    f.write(key + '\n')
+    f.write(f'{key} {count}\n')
