@@ -42,8 +42,9 @@ def get_v8_key(lines: List[str]):
 
     key_parts: List[str] = []
     for key in ctr:
-        key = key.strip().rsplit(' ', maxsplit=1)[-1].strip()
-        key_parts.append(f"{key}{ctr[key]}")
+        if ' by reducer ' in key:
+            key = key.strip().rsplit(' ', maxsplit=1)[-1].strip()
+            key_parts.append(f"{key}{ctr[key]}")
 
     return "".join(key_parts)
 
