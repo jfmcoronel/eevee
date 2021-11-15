@@ -99,7 +99,7 @@ function insertFileWithCovDiff(bitmapType: string, queueType: string, jsFile: st
     );
 }
 
-function getNextTestcase(jsFile: string) {
+function getNextTestcase(jsFile: string, generationNumberStr: string) {
     const typeFile = jsFile + ".t";
     const client = createRedisClient();
 
@@ -133,6 +133,10 @@ function getNextTestcase(jsFile: string) {
                         const fileObj = JSON.parse(res);
                         fs.writeFileSync(jsFile, fileObj.js);
                         fs.writeFileSync(typeFile, fileObj.type);
+
+                        // OLIVINE: Record all selections
+                        const basePath = path.dirname(jsFile);
+                        fs.writeFileSync(`${basePath}/@selected_inputs/${generationNumberStr.padStart(8, "0")}.js`, fileObj.js);
                     } else {
                         console.log("[-] getNextTestcase - Need to populate first");
                     }
@@ -179,6 +183,7 @@ function parseArgs() {
 
     const getNextTestcaseParser = subparsers.addParser("getNextTestcase");
     getNextTestcaseParser.addArgument("jsFile");
+    getNextTestcaseParser.addArgument("generationNumberStr");
 
     const reportStatusParser = subparsers.addParser("reportStatus");
     reportStatusParser.addArgument("fuzzerId");
@@ -198,7 +203,7 @@ function parseArgs() {
     } else if (args.command === "insertCrash") {
         insertFileWithCovDiff("crashBitmap", "crashQueue", args.jsFile, args.covDiffFile);
     } else if (args.command === "getNextTestcase") {
-        getNextTestcase(args.jsFile);
+        getNextTestcase(args.jsFile, args.generationNumberStr);
     } else if (args.command === "reportStatus") {
         reportStatus(args.fuzzerId, args.statFile);
     } 

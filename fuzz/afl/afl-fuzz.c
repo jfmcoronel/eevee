@@ -3173,7 +3173,11 @@ static u8* describe_op(u8 hnb) {
 
   } else {
 
-    sprintf(ret, "src:%06u", current_entry);
+#ifdef OLIVINE_COMMON
+    sprintf(ret, "from:%08u", olivine_round_ctr);
+#else
+    sprintf(ret, "src:%08u", current_entry);
+#endif
 
     if (splicing_with >= 0)
       sprintf(ret + strlen(ret), "+%06u", splicing_with);
@@ -3193,6 +3197,10 @@ static u8* describe_op(u8 hnb) {
 
   }
 
+#ifdef OLIVINE_COMMON
+  if (hnb == 0) strcat(ret, ",+null");
+  if (hnb == 1) strcat(ret, ",+seen");
+#endif
   if (hnb == 2) strcat(ret, ",+cov");
 
 #ifdef IS_OLIVINE
@@ -3201,7 +3209,7 @@ static u8* describe_op(u8 hnb) {
   } else if (olivine_verdict == 0) {
     strcat(ret, ",@nojit");
   } else {
-    strcat(ret, ",@old");
+    strcat(ret, ",@seen");
   }
 #endif
 
@@ -4903,14 +4911,14 @@ EXP_ST u8 common_fuzz_stuff(char** argv, u8* out_buf, u32 len) {
 #ifdef OLIVINE_COMMON
   olivine_input_generation_ctr++;
 
-  char *all_inputs = "@all_inputs";
-  char *seed_inputs = "@seed_inputs";
+  char *generated_inputs = "@generated_inputs";
+  char *seed_inputs = "@filtered_seeds";
   char *path = NULL;
 
   if (in_dir) {
     path = seed_inputs;
   } else {
-    path = all_inputs;
+    path = generated_inputs;
   }
 
   u8 *fn = alloc_printf("%s/%s/%08d.js", out_dir, path, olivine_input_generation_ctr);
@@ -7112,8 +7120,8 @@ static u8 fuzz_js(char** argv) {
   fuzz_inputs_dir = alloc_printf("%s/fuzz_inputs", out_dir);
   cur_input = alloc_printf("%s/.cur_input.js", out_dir);
 
-  cmdline = alloc_printf("node %s/../TS/redis_ctrl.js getNextTestcase %s",
-      own_loc, cur_input);
+  cmdline = alloc_printf("node %s/../TS/redis_ctrl.js getNextTestcase %s %d",
+      own_loc, cur_input, olivine_round_ctr);
 
   ACTF("Get a next testcase");
 
@@ -7738,13 +7746,16 @@ EXP_ST void setup_dirs_fds(void) {
   if (mkdir(tmp, 0700)) PFATAL("Unable to create '%s'", tmp);
   ck_free(tmp);
 
-// All fuzz inputs
 #ifdef OLIVINE_COMMON
-  tmp = alloc_printf("%s/@all_inputs", out_dir);
+  tmp = alloc_printf("%s/@selected_inputs", out_dir);
   if (mkdir(tmp, 0700) && errno != EEXIST) PFATAL("Unable to create '%s'", tmp);
   ck_free(tmp);
 
-  tmp = alloc_printf("%s/@seed_inputs", out_dir);
+  tmp = alloc_printf("%s/@generated_inputs", out_dir);
+  if (mkdir(tmp, 0700) && errno != EEXIST) PFATAL("Unable to create '%s'", tmp);
+  ck_free(tmp);
+
+  tmp = alloc_printf("%s/@filtered_seeds", out_dir);
   if (mkdir(tmp, 0700) && errno != EEXIST) PFATAL("Unable to create '%s'", tmp);
   ck_free(tmp);
 #endif
