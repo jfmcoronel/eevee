@@ -175,7 +175,7 @@ def main():
         execute(updater_cmd)
 
         if not os.path.exists(os.path.join(OLIVINE_BASEPATH, 'fuzz', 'afl', 'afl-fuzz')):
-            with open(os.path.join(os.path.expanduser('~'), 'log-start'), 'r') as f:
+            with open(os.path.join(os.path.expanduser('~'), 'log-start.txt'), 'r') as f:
                 print(f.read())
 
             print('\nAFL executable does not exist')
