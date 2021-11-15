@@ -23,6 +23,13 @@
 #include "olivine.h"
 #define OLIVINE_LOG_SEEDS // TODO: Remove
 
+#ifdef OLIVINE_COMMON
+// Stop after generating N inputs
+int olivine_until_n_inputs = 0;
+int olivine_input_generation_ctr = 0;
+int olivine_round_ctr = 0;  // Number of fuzz_js invocations
+#endif
+
 #define AFL_MAIN
 #define MESSAGES_TO_STDOUT
 
@@ -3317,10 +3324,6 @@ cleanup:
 }
 
 #ifdef OLIVINE_COMMON
-// Stop after generating N inputs
-int olivine_until_n_inputs = 0;
-int olivine_input_generation_ctr = 0;
-int olivine_round_ctr = 0;  // Number of fuzz_js invocations
 
 static u64 olivine_get_fuzz_input_hits() {
 	u8* fn = alloc_printf("%s/.olivine_dump", out_dir);
