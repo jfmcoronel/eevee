@@ -32,7 +32,7 @@ def do_own_analysis_singlepass(n: str, jit_compiler_code: str):
 
             execute(actual_cmd)
 
-    output_basepath = f'{OLIVINE_BASEPATH}/{OLIVINE_SLAVE_OUTPUT_DIR_PREFIX}{n}/@optset'
+    output_basepath = f'{OLIVINE_BASEPATH}/{OLIVINE_SLAVE_OUTPUT_DIR_PREFIX}{n}/@jit_feedback'
     generated_inputs_basepath = f'/home/jfmcoronel/die/{OLIVINE_SLAVE_OUTPUT_DIR_PREFIX}{n}/@generated_inputs/*.js'
     selected_inputs_basepath = f'/home/jfmcoronel/die/{OLIVINE_SLAVE_OUTPUT_DIR_PREFIX}{n}/@selected_inputs/*.js'
 
