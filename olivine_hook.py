@@ -37,14 +37,11 @@ def get_v8_key(lines: List[str]):
     ctr = Counter()  # type: Counter[str]
 
     for line in lines:
-        reducer = line.rsplit(' ', maxsplit=1)[-1].strip()
-        ctr[reducer] += 1
+        if ' by reducer ' in line:
+            reducer = line.rsplit(' ', maxsplit=1)[-1].strip()
+            ctr[reducer] += 1
 
-    key_parts: List[str] = []
-    for key in ctr:
-        if ' by reducer ' in key:
-            key = key.strip().rsplit(' ', maxsplit=1)[-1].strip()
-            key_parts.append(f"{key}{ctr[key]}")
+    key_parts: List[str] = [f"{key}{ctr[key]}" for key in ctr]
 
     return "".join(key_parts)
 
@@ -98,44 +95,14 @@ def get_ch_key(lines: List[str]):
     return ''.join(f"{phase}{ctr[phase]}" for phase in ctr)
 
 
-def get_jit_compiler_feedback_cmd(jit_compiler_env: str, jit_compiler_bin_path: str, jit_compiler_flags: str, current_fuzz_input_filepath: str, jit_compiler_feedback_filepath: str):
-    return f"{jit_compiler_env} {jit_compiler_bin_path} {jit_compiler_flags} {current_fuzz_input_filepath} > {jit_compiler_feedback_filepath}"
+key_map = {
+    JSC: get_jsc_key,
+    V8: get_v8_key,
+    CH: get_ch_key,
+}
 
+key_fn = key_map[jit_compiler_type_number]
 
-if jit_compiler_type_number == JSC:
-    jit_compiler_env = "JSC_useConcurrentJIT=false JSC_logCompilationChanges=true"
-    jit_compiler_bin_path = "timeout 10 /home/jfmcoronel/jsc"
-    jit_compiler_flags = ""
-
-    jit_compiler_feedback_cmd = get_jit_compiler_feedback_cmd(jit_compiler_env, jit_compiler_bin_path, jit_compiler_flags, current_fuzz_input_filepath, jit_compiler_feedback_filepath)
-    key_fn = get_jsc_key
-
-elif jit_compiler_type_number == V8:
-    jit_compiler_env = ""
-    jit_compiler_bin_path = "timeout 10 /home/jfmcoronel/v8-afl-dir/v8/out/Debug/d8"
-    jit_compiler_flags = "--trace-turbo-reduction"
-    current_fuzz_input_path = "/home/jfmcoronel/die/output-0/.cur_input"
-
-    jit_compiler_feedback_cmd = get_jit_compiler_feedback_cmd(jit_compiler_env, jit_compiler_bin_path, jit_compiler_flags, current_fuzz_input_filepath, jit_compiler_feedback_filepath)
-    key_fn = get_v8_key
-
-elif jit_compiler_type_number == CH:
-    jit_compiler_env = ""
-    jit_compiler_bin_path = "timeout 10 /home/jfmcoronel/ch"
-    jit_compiler_flags = "-bgjit- -dump:backend"
-    current_fuzz_input_path = "/home/jfmcoronel/die/output-0/.cur_input"
-
-    jit_compiler_feedback_cmd = get_jit_compiler_feedback_cmd(jit_compiler_env, jit_compiler_bin_path, jit_compiler_flags, current_fuzz_input_filepath, jit_compiler_feedback_filepath)
-    key_fn = get_ch_key
-
-else:
-    print('Error')
-    sys.exit(-1)
-
-
-# Execute JIT compiler for feedback
-# print(jit_compiler_feedback_cmd)
-# os.system(jit_compiler_feedback_cmd)
 
 with open(jit_compiler_feedback_filepath, "r") as f:
     lines = f.readlines()

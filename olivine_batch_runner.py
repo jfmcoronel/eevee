@@ -45,7 +45,7 @@ def start(jit_compiler_code: str, until_n_inputs: int, seed: int):
     execute(f'tmux new-session -s corpus -d "python3 {OLIVINE_BASEPATH}/olivine_batch_runner.py process-corpus {jit_compiler_code} {until_n_inputs} {seed}"')
 
     # Must wait for all slaves to finish
-    wait_until_tmux_session_closed('corpus', 60)
+    wait_until_tmux_session_closed('corpus', 10)
 
     execute(f'tmux new-session -s fuzz -d "python3 {OLIVINE_BASEPATH}/olivine_batch_runner.py fuzz {jit_compiler_code} {until_n_inputs} {seed}"')
 
@@ -88,20 +88,27 @@ def prune_corpus_with_slave(n: str, jit_compiler_code: str):
 
     assert jit_compiler_code == 'v8', f'Pruning of corpus via {jit_compiler_code} is not yet supported'
 
+    prune_dir = f'{OLIVINE_BASEPATH}/{OLIVINE_SLAVE_OUTPUT_DIR_PREFIX}{n}/@prune-log'
+    os.makedirs(prune_dir)
+
     full_fuzz_target_str = get_fuzz_target_string_with_flags(jit_compiler_code)
 
     for full_js_path in js_files:
         actual_cmd = f'timeout {TIMEOUT} {full_fuzz_target_str} {full_js_path} {dump_suffix}'
+        basename = os.path.basename(full_js_path)
         print(actual_cmd)
 
         result = os.popen(actual_cmd).read().strip()
-        lines = result.rsplit('\n', maxsplit=1)
-        status_code = int(lines[-1])
+        dump_filename = f'added.{basename}.js.txt'
 
-        if status_code != 0 or ' by reducer ' not in result:
+        if ' by reducer ' not in result:
             print(f'Deleting {full_js_path} ({remaining} seeds left)')
             os.remove(full_js_path)
             remaining -= 1
+            dump_filename = f'pruned.{basename}.js.txt'
+
+        with open(os.path.join(prune_dir, dump_filename), 'w') as f:
+            f.write(result)
 
     print('Remaining seeds:', remaining)
 
