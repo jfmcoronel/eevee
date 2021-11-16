@@ -22,15 +22,19 @@ def get_jsc_key(lines: List[str]):
 
     for line in lines:
         line = line.strip()
-        if "changed the IR" in line:
+        if ' changed the IR' in line:
             ctr[line] += 1
 
     key_parts: List[str] = []
     for key in ctr:
-        new_key = key.replace("Phase ", "").replace(" changed the IR.", "").replace(" ", "")
+        new_key = key.replace("Phase ", "").replace(" changed the IR", "").replace(" ", "").strip()
         key_parts.append(f"{new_key}{ctr[key]}")
 
     return "".join(key_parts)
+
+
+def get_jsc_has_optset(dump: str):
+    return ' changed the IR' in dump
 
 
 def get_v8_key(lines: List[str]):
@@ -44,6 +48,10 @@ def get_v8_key(lines: List[str]):
     key_parts: List[str] = [f"{key}{ctr[key]}" for key in ctr]
 
     return "".join(key_parts)
+
+
+def get_v8_has_optset(dump: str):
+    return ' by reducer ' in dump
 
 
 def get_ch_key(lines: List[str]):
@@ -95,28 +103,43 @@ def get_ch_key(lines: List[str]):
     return ''.join(f"{phase}{ctr[phase]}" for phase in ctr)
 
 
-key_map = {
-    JSC: get_jsc_key,
-    V8: get_v8_key,
-    CH: get_ch_key,
-}
-
-key_fn = key_map[jit_compiler_type_number]
+def get_ch_has_optset(dump: str):
+    return 'IR after' in dump
 
 
-with open(jit_compiler_feedback_filepath, "r") as f:
-    lines = f.readlines()
+if __name__ == '__main__':
+    key_map = {
+        JSC: get_jsc_key,
+        V8: get_v8_key,
+        CH: get_ch_key,
+    }
 
-key = '@@@' + key_fn(lines)
+    has_optset_map = {
+        JSC: get_jsc_has_optset,
+        V8: get_v8_has_optset,
+        CH: get_ch_has_optset,
+    }
 
-r = redis.Redis(host='localhost', port=6379, db=0)
-count = r.incr(key, 1)
+    key_fn = key_map[jit_compiler_type_number]
+    has_optset = has_optset_map[jit_compiler_type_number]
 
-with open(keycount_path, 'wb') as f:
-    if key == '@@@':
-        f.write((0).to_bytes(8, 'little'))
+
+    with open(jit_compiler_feedback_filepath, "r") as f:
+        dump = f.read()
+
+
+    if has_optset(dump):
+        key = '@@@' + key_fn(dump.split('\n'))
+
+        r = redis.Redis(host='localhost', port=6379, db=0)
+        count = r.incr(key, 1)
+
+        with open(keycount_path, 'wb') as f:
+            f.write(count.to_bytes(8, 'little'))
+
+        with open(key_log_path, 'a') as f:
+            f.write(f'{key} {count}\n')
+
     else:
-        f.write(count.to_bytes(8, 'little'))
-
-with open(key_log_path, 'a') as f:
-    f.write(f'{key} {count}\n')
+        with open(keycount_path, 'wb') as f:
+            f.write((0).to_bytes(8, 'little'))
