@@ -196,9 +196,9 @@ def main():
     elif cmd == 'process-corpus':
         skip_pruning = False
 
-        if len(sys.argv) == 4:
+        if len(sys.argv) == 5:
             jit_compiler_code, until_n_inputs, seed = sys.argv[2:]
-        elif len(sys.argv) == 5:
+        elif len(sys.argv) == 6:
             jit_compiler_code, until_n_inputs, seed, skip_pruning_arg = sys.argv[2:]
             if skip_pruning_arg == 'skip':
                 skip_pruning = True
