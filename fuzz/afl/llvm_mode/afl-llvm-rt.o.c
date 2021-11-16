@@ -97,6 +97,8 @@ static void __afl_start_forkserver(void) {
   // [jfmcoronel] Rewrite stdout log file
   ftruncate(1, 0);
   lseek(1, 0, SEEK_SET);
+  setvbuf(stdout, NULL, _IONBF, 0);
+  setvbuf(stderr, NULL, _IONBF, 0);
 
   static u8 tmp[4];
   s32 child_pid;
