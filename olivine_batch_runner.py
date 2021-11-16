@@ -78,7 +78,7 @@ def process_corpus(jit_compiler_code: str, until_n_inputs: int, seed: int):
 
     cmds: List[str] = [*pre_cmds, *prune_cmds, *populate_cmds]
 
-    run_windowed_slaves_in_current_session(cmds, 'populate', False)
+    run_windowed_slaves_in_current_session(cmds, 'corpus', False)
 
 
 def prune_corpus_with_slave(n: str, jit_compiler_code: str):
