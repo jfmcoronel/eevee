@@ -98,6 +98,7 @@ int olivine_jit_compiler_type = OLIVINE_JIT_COMPILER_NONE;
 u64 olivine_verdict = 0;
 
 static s32 olivine_jit_dump_fd = -1;
+static s32 olivine_keycount_fd = -1;
 u8* olivine_hook_cmdline = 0;
 #endif
 
@@ -2127,7 +2128,6 @@ EXP_ST void init_forkserver(char** argv) {
 
 #ifdef OLIVINE_COMMON
     if (olivine_jit_dump_fd < 0) PFATAL("Forkserver cannot use Olivine dump file descriptor");
-    OKF("@@@  Olivine dump FD: %d  @@@", olivine_jit_dump_fd);
     dup2(olivine_jit_dump_fd, 1);
     dup2(olivine_jit_dump_fd, 2);
 #else
@@ -3337,12 +3337,14 @@ static u64 olivine_get_fuzz_input_hits() {
 
   execute_sh(olivine_hook_cmdline);
 
-  lseek_ret = lseek(olivine_jit_dump_fd, 0, SEEK_SET);
+  lseek_ret = lseek(olivine_keycount_fd, 0, SEEK_SET);
   if (lseek_ret < 0) PFATAL("Failed to lseek before reading");
 
-  read(olivine_jit_dump_fd, &count, sizeof(count));
+  read(olivine_keycount_fd, &count, sizeof(count));
 
   lseek_ret = lseek(olivine_jit_dump_fd, 0, SEEK_SET);
+  if (lseek_ret < 0) PFATAL("Failed to lseek before reading");
+  lseek_ret = lseek(olivine_keycount_fd, 0, SEEK_SET);
   if (lseek_ret < 0) PFATAL("Failed to lseek after reading");
 
   return count;
@@ -7773,11 +7775,15 @@ EXP_ST void setup_dirs_fds(void) {
   ck_free(tmp);
 
   // [jfmcoronel] Do not free other allocations
-	tmp = alloc_printf("%s/.olivine_dump", out_dir);
-  olivine_jit_dump_fd = open(tmp, O_RDWR | O_CREAT, 0600);
+	tmp = alloc_printf("%s/.olivine_jitdump", out_dir);
+  olivine_jit_dump_fd = open(tmp, O_WRONLY | O_CREAT, 0600);
   if (olivine_jit_dump_fd < 0) PFATAL("Unable to open %s", tmp);
-
   olivine_hook_cmdline = alloc_printf("python3 /home/jfmcoronel/die/olivine_hook.py %d \"%s\"", olivine_jit_compiler_type, tmp);
+  ck_free(tmp);
+
+	tmp = alloc_printf("%s/.olivine_keycount", out_dir);
+  olivine_keycount_fd = open(tmp, O_RDONLY | O_CREAT, 0600);
+  if (olivine_keycount_fd < 0) PFATAL("Unable to open %s", tmp);
   ck_free(tmp);
 #endif
 
