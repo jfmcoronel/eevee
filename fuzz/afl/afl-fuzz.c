@@ -2126,11 +2126,13 @@ EXP_ST void init_forkserver(char** argv) {
     setsid();
 
 #ifdef OLIVINE_COMMON
-     dup2(olivine_jit_dump_fd, 1);
-     dup2(olivine_jit_dump_fd, 2);
+    if (olivine_jit_dump_fd < 0) PFATAL("Forkserver cannot use Olivine dump file descriptor");
+    OKF("@@@  Olivine dump FD: %d  @@@", olivine_jit_dump_fd);
+    dup2(olivine_jit_dump_fd, 1);
+    dup2(olivine_jit_dump_fd, 2);
 #else
-     dup2(dev_null_fd, 1);
-     dup2(dev_null_fd, 2);
+    dup2(dev_null_fd, 1);
+    dup2(dev_null_fd, 2);
 #endif
 
     if (out_file) {
@@ -3365,11 +3367,11 @@ static u8 save_if_interesting(char** argv, void* mem, u32 len, u8 fault) {
   olivine_verdict = olivine_get_fuzz_input_hits();
 
   if (olivine_verdict > 1) {
-    ACTF("@@@  Optset already seen %llu times  @@@", olivine_verdict);
+    OKF("@@@  Optset already seen %llu times  @@@", olivine_verdict);
   } else if (olivine_verdict == 1) {
-    ACTF("@@@  Generated new optset  @@@");
+    OKF("@@@  Generated new optset  @@@");
   } else {
-    ACTF("@@@  Did not trigger JIT compilation  @@@");
+    OKF("@@@  Did not trigger JIT compilation  @@@");
   }
 #endif
 
@@ -4933,7 +4935,7 @@ EXP_ST u8 common_fuzz_stuff(char** argv, u8* out_buf, u32 len) {
   }
 
   u8 *fn = alloc_printf("%s/%s/%08d.js", out_dir, path, olivine_input_generation_ctr);
-  ACTF("@@@   Writing to %s...  @@@", fn);
+  OKF("@@@   Writing to %s...  @@@", fn);
   int fd = open(fn, O_WRONLY | O_CREAT, 0600);
   ck_free(fn);
 
@@ -7041,10 +7043,10 @@ static s32 fuzz_dir(char* input_dir, char** argv) {
     actual_js_ctr++;
 
     if (in_dir) {
-        ACTF("@@@  fuzz_dir (corpus file %d/%d; seed input %d)  @@@", i + 1, nl_cnt, actual_js_ctr);
+        OKF("@@@  fuzz_dir (corpus file %d/%d; seed input %d)  @@@", i + 1, nl_cnt, actual_js_ctr);
     } else {
         // Counter is incremented in common_fuzz_stuff which is called after this
-        ACTF("@@@  fuzz_dir (round %d, %d/%d; actual %d, total %d) [%d to generate] %s  @@@", olivine_round_ctr, i + 1, nl_cnt, actual_js_ctr, olivine_input_generation_ctr + 1, olivine_until_n_inputs, fn);
+        OKF("@@@  fuzz_dir (round %d, %d/%d; actual %d, total %d) [%d to generate] %s  @@@", olivine_round_ctr, i + 1, nl_cnt, actual_js_ctr, olivine_input_generation_ctr + 1, olivine_until_n_inputs, fn);
     }
 #endif // OLIVINE_COMMON
 
