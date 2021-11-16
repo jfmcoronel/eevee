@@ -37,6 +37,23 @@ metrics_info_mapping: Dict[str, MetricsInfo] = {
 }
 
 
+def get_fuzz_target_string_with_flags(jit_compiler_code: str):
+    fuzz_target_path = get_fuzz_target_path(jit_compiler_code)
+    fuzz_target_flags = get_fuzz_target_flags(jit_compiler_code)
+    libs = get_lib_string(jit_compiler_code)
+
+    return f'{fuzz_target_path} {fuzz_target_flags} {libs}'
+
+
+def get_lib_string(jit_compiler_code: str):
+    die_corpus_path = f'{OLIVINE_BASEPATH}/DIE-corpus/'
+
+    if jit_compiler_code == 'ch':
+        return f'-lib={die_corpus_path}/lib.js -lib={die_corpus_path}/jsc.js -lib={die_corpus_path}/v8.js -lib={die_corpus_path}/ffx.js -lib={die_corpus_path}/chakra.js'
+
+    return f'{die_corpus_path}/lib.js {die_corpus_path}/jsc.js {die_corpus_path}/v8.js {die_corpus_path}/ffx.js {die_corpus_path}/chakra.js'
+
+
 def cmd_with_time_logging(cmd: str, log_path: str, should_log_all_output: bool, must_have_double_braces: bool, show_errors_on_screen: bool = True):
     log_all_output = '>&2' if should_log_all_output else ''
     suppressor = '' if show_errors_on_screen else '>/dev/null'
