@@ -18,7 +18,7 @@ from olivine_helpers import (
 # Usage:
 # python3 olivine_batch_runner.py start {jitCompilerCode} {untilNInputs} {seed}
 # python3 olivine_batch_runner.py process-corpus {jitCompilerCode} {untilNInputs} {seed}
-# python3 olivine_batch_runner.py prune-corpus {jitCompilerCode} {untilNInputs} {seed}
+# python3 olivine_batch_runner.py prune-corpus-with-slave {n} {jitCompilerCode}
 # python3 olivine_batch_runner.py populate-with-slave {n} {jitCompilerCode} {untilNInputs} {seed}
 # python3 olivine_batch_runner.py fuzz {jitCompilerCode} {untilNInputs} {seed}
 
@@ -64,7 +64,7 @@ def process_corpus(jit_compiler_code: str, until_n_inputs: int, seed: int):
         f'tmux rename-window -t corpus-{{SLAVENUMBER}} prune-{{SLAVENUMBER}}',
         cmd_with_time_logging(
             # -u: Must be unbuffered for realtime stdout
-            f'python3 -u {OLIVINE_BASEPATH}/olivine_batch_runner.py prune-corpus {{SLAVENUMBER}} {jit_compiler_code} {until_n_inputs} {seed}',
+            f'python3 -u {OLIVINE_BASEPATH}/olivine_batch_runner.py prune-corpus-with-slave {{SLAVENUMBER}} {jit_compiler_code}',
             f'{OLIVINE_BASEPATH}/OLIVINE_SLAVE_OUTPUT_PATH/log-prune.txt',
             should_log_all_output=True,
             must_have_double_braces=True,
@@ -191,7 +191,7 @@ def main():
 
         process_corpus(jit_compiler_code, until_n_inputs, seed)
 
-    elif cmd == 'prune-corpus':
+    elif cmd == 'prune-corpus-with-slave':
         n, jit_compiler_code = sys.argv[2:]
 
         prune_corpus_with_slave(n, jit_compiler_code)
