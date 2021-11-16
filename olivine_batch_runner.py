@@ -179,6 +179,9 @@ def main():
             print('\nAFL executable does not exist')
             exit(-1)
 
+        # TODO: Remove when orchestrator is updated
+        execute('pip3 install hiredis')
+
         # Reexecute self
         execute(f"python3 {sys.argv[0]} true-start {' '.join(sys.argv[2:])}")
 
