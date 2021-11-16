@@ -99,13 +99,13 @@ def prune_corpus_with_slave(n: str, jit_compiler_code: str):
         print(actual_cmd)
 
         result = os.popen(actual_cmd).read().strip()
-        dump_filename = f'added.{basename}.js.txt'
+        dump_filename = f'added.{basename}.txt'
 
         if ' by reducer ' not in result:
             print(f'Deleting {full_js_path} ({remaining} seeds left)')
             os.remove(full_js_path)
             remaining -= 1
-            dump_filename = f'pruned.{basename}.js.txt'
+            dump_filename = f'pruned.{basename}.txt'
 
         with open(os.path.join(prune_dir, dump_filename), 'w') as f:
             f.write(result)
