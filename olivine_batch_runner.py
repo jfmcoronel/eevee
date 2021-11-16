@@ -50,7 +50,7 @@ def start(jit_compiler_code: str, until_n_inputs: int, seed: int):
     execute(f'tmux new-session -s fuzz -d "python3 {OLIVINE_BASEPATH}/olivine_batch_runner.py fuzz {jit_compiler_code} {until_n_inputs} {seed}"')
 
 
-def process_corpus(jit_compiler_code: str, until_n_inputs: int, seed: int, populate_only: bool):
+def process_corpus(jit_compiler_code: str, until_n_inputs: int, seed: int, populate_only: bool = False):
     execute(f'echo FLUSHALL | redis-cli -p {REDIS_PORT}')
 
     if not populate_only:
@@ -82,6 +82,10 @@ def process_corpus(jit_compiler_code: str, until_n_inputs: int, seed: int, popul
     cmds: List[str] = [*pre_cmds, *prune_cmds, *populate_cmds]
 
     run_windowed_slaves_in_current_session(cmds, 'corpus', False)
+
+
+def populate_only(jit_compiler_code: str, until_n_inputs: int, seed: int):
+    process_corpus(jit_compiler_code, until_n_inputs, seed, True)
 
 
 def prune_corpus_with_slave(n: str, jit_compiler_code: str):
@@ -197,22 +201,20 @@ def main():
         start(jit_compiler_code, until_n_inputs, seed)
 
     elif cmd == 'process-corpus':
-        populate_only = False
-
-        if len(sys.argv) == 5:
-            jit_compiler_code, until_n_inputs, seed = sys.argv[2:]
-        elif len(sys.argv) == 6:
-            jit_compiler_code, until_n_inputs, seed, populate_only_arg = sys.argv[2:]
-
-            if populate_only_arg == 'populate':
-                populate_only = True
-        else:
-            assert False, f'Incorrect number of arguments: {sys.argv}'
+        jit_compiler_code, until_n_inputs, seed = sys.argv[2:]
 
         seed = int(seed)
         until_n_inputs = int(until_n_inputs)
 
-        process_corpus(jit_compiler_code, until_n_inputs, seed, populate_only)
+        process_corpus(jit_compiler_code, until_n_inputs, seed)
+
+    elif cmd == 'populate-only':
+        jit_compiler_code, until_n_inputs, seed = sys.argv[2:]
+
+        seed = int(seed)
+        until_n_inputs = int(until_n_inputs)
+
+        populate_only(jit_compiler_code, until_n_inputs, seed)
 
     elif cmd == 'prune-corpus-with-slave':
         n, jit_compiler_code = sys.argv[2:]
