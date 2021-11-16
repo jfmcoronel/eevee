@@ -13,8 +13,7 @@ CH = 3
 jit_compiler_type_number = int(sys.argv[1])
 output_basepath = os.path.dirname(sys.argv[2])
 jit_compiler_feedback_filepath = sys.argv[2]
-# current_fuzz_input_filepath = os.path.join(output_basepath, ".cur_input")
-keycount_path = os.path.join(output_basepath, ".olivine-keycount")
+keycount_path = os.path.join(output_basepath, ".olivine_keycount")
 key_log_path = os.path.join(output_basepath, "log-keys.txt")
 
 
