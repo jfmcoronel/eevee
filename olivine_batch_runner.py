@@ -110,7 +110,7 @@ def populate_with_slave(n: str, jit_compiler_code: str, until_n_inputs: int, see
     full_fuzz_target_str = get_fuzz_target_string_with_flags(jit_compiler_code)
 
     populate_cmd = cmd_with_time_logging(
-        f'''./fuzz/afl/afl-fuzz -C -s {seed} -e {until_n_inputs} -j {jit_compiler_code} -m none -o {OLIVINE_SLAVE_OUTPUT_DIR_PREFIX}{n} -i ./corpus/{OLIVINE_SLAVE_OUTPUT_DIR_PREFIX}{n} '{full_fuzz_target_str}' @@''',
+        f'''./fuzz/afl/afl-fuzz -C -s {seed} -e {until_n_inputs} -j {jit_compiler_code} -m none -o {OLIVINE_SLAVE_OUTPUT_DIR_PREFIX}{n} -i ./corpus/{OLIVINE_SLAVE_OUTPUT_DIR_PREFIX}{n} {full_fuzz_target_str} @@''',
         f'{OLIVINE_BASEPATH}/{OLIVINE_SLAVE_OUTPUT_DIR_PREFIX}{n}/log-populate.txt',
         should_log_all_output=True,
         must_have_double_braces=False,
@@ -125,7 +125,7 @@ def fuzz(jit_compiler_code: str, until_n_inputs: int, seed: int):
     execute('echo core | sudo tee /proc/sys/kernel/core_pattern')
 
     fuzz_cmd = cmd_with_time_logging(
-        f'''./fuzz/afl/afl-fuzz -s {seed} -e {until_n_inputs} -j {jit_compiler_code} -m none -o OLIVINE_SLAVE_OUTPUT_PATH '{full_fuzz_target_str}' @@''',
+        f'''./fuzz/afl/afl-fuzz -s {seed} -e {until_n_inputs} -j {jit_compiler_code} -m none -o OLIVINE_SLAVE_OUTPUT_PATH {full_fuzz_target_str} @@''',
         f'{OLIVINE_BASEPATH}/OLIVINE_SLAVE_OUTPUT_PATH/log-fuzz.txt',
         should_log_all_output=False,
         must_have_double_braces=True,
