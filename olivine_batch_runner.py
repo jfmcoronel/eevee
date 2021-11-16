@@ -11,6 +11,7 @@ from olivine_helpers import (
     TIMEOUT,
     cmd_with_time_logging,
     execute,
+    get_fuzz_target_env_vars_string,
     get_fuzz_target_string_with_flags,
     wait_until_tmux_session_closed,
 )
@@ -20,6 +21,7 @@ from olivine_helpers import (
 # python3 olivine_batch_runner.py process-corpus {jitCompilerCode} {untilNInputs} {seed}
 # python3 olivine_batch_runner.py prune-corpus-with-slave {n} {jitCompilerCode}
 # python3 olivine_batch_runner.py populate-with-slave {n} {jitCompilerCode} {untilNInputs} {seed}
+# python3 olivine_batch_runner.py populate-only {jitCompilerCode} {untilNInputs} {seed}
 # python3 olivine_batch_runner.py fuzz {jitCompilerCode} {untilNInputs} {seed}
 
 
@@ -99,9 +101,10 @@ def prune_corpus_with_slave(n: str, jit_compiler_code: str):
     os.makedirs(prune_dir)
 
     full_fuzz_target_str = get_fuzz_target_string_with_flags(jit_compiler_code)
+    fuzz_env_vars = get_fuzz_target_env_vars_string(jit_compiler_code)
 
     for full_js_path in js_files:
-        actual_cmd = f'timeout {TIMEOUT} {full_fuzz_target_str} {full_js_path} {dump_suffix}'
+        actual_cmd = f'{fuzz_env_vars} timeout {TIMEOUT} {full_fuzz_target_str} {full_js_path} {dump_suffix}'
         basename = os.path.basename(full_js_path)
         print(actual_cmd)
 
@@ -122,9 +125,10 @@ def prune_corpus_with_slave(n: str, jit_compiler_code: str):
 
 def populate_with_slave(n: str, jit_compiler_code: str, until_n_inputs: int, seed: int):
     full_fuzz_target_str = get_fuzz_target_string_with_flags(jit_compiler_code)
+    fuzz_env_vars = get_fuzz_target_env_vars_string(jit_compiler_code)
 
     populate_cmd = cmd_with_time_logging(
-        f'''./fuzz/afl/afl-fuzz -C -s {seed} -e {until_n_inputs} -j {jit_compiler_code} -m none -o {OLIVINE_SLAVE_OUTPUT_DIR_PREFIX}{n} -i ./corpus/{OLIVINE_SLAVE_OUTPUT_DIR_PREFIX}{n} {full_fuzz_target_str} @@''',
+        f'''{fuzz_env_vars} ./fuzz/afl/afl-fuzz -C -s {seed} -e {until_n_inputs} -j {jit_compiler_code} -m none -o {OLIVINE_SLAVE_OUTPUT_DIR_PREFIX}{n} -i ./corpus/{OLIVINE_SLAVE_OUTPUT_DIR_PREFIX}{n} {full_fuzz_target_str} @@''',
         f'{OLIVINE_BASEPATH}/{OLIVINE_SLAVE_OUTPUT_DIR_PREFIX}{n}/log-populate.txt',
         should_log_all_output=True,
         must_have_double_braces=False,
@@ -135,11 +139,12 @@ def populate_with_slave(n: str, jit_compiler_code: str, until_n_inputs: int, see
 
 def fuzz(jit_compiler_code: str, until_n_inputs: int, seed: int):
     full_fuzz_target_str = get_fuzz_target_string_with_flags(jit_compiler_code)
+    fuzz_env_vars = get_fuzz_target_env_vars_string(jit_compiler_code)
 
     execute('echo core | sudo tee /proc/sys/kernel/core_pattern')
 
     fuzz_cmd = cmd_with_time_logging(
-        f'''./fuzz/afl/afl-fuzz -s {seed} -e {until_n_inputs} -j {jit_compiler_code} -m none -o OLIVINE_SLAVE_OUTPUT_PATH {full_fuzz_target_str} @@''',
+        f'''{fuzz_env_vars} ./fuzz/afl/afl-fuzz -s {seed} -e {until_n_inputs} -j {jit_compiler_code} -m none -o OLIVINE_SLAVE_OUTPUT_PATH {full_fuzz_target_str} @@''',
         f'{OLIVINE_BASEPATH}/OLIVINE_SLAVE_OUTPUT_PATH/log-fuzz.txt',
         should_log_all_output=False,
         must_have_double_braces=True,
@@ -208,14 +213,6 @@ def main():
 
         process_corpus(jit_compiler_code, until_n_inputs, seed)
 
-    elif cmd == 'populate-only':
-        jit_compiler_code, until_n_inputs, seed = sys.argv[2:]
-
-        seed = int(seed)
-        until_n_inputs = int(until_n_inputs)
-
-        populate_only(jit_compiler_code, until_n_inputs, seed)
-
     elif cmd == 'prune-corpus-with-slave':
         n, jit_compiler_code = sys.argv[2:]
 
@@ -228,6 +225,14 @@ def main():
         until_n_inputs = int(until_n_inputs)
 
         populate_with_slave(n, jit_compiler_code, until_n_inputs, seed)
+
+    elif cmd == 'populate-only':
+        jit_compiler_code, until_n_inputs, seed = sys.argv[2:]
+
+        seed = int(seed)
+        until_n_inputs = int(until_n_inputs)
+
+        populate_only(jit_compiler_code, until_n_inputs, seed)
 
     elif cmd == 'fuzz':
         jit_compiler_code, until_n_inputs, seed = sys.argv[2:]
