@@ -3367,9 +3367,9 @@ static u8 save_if_interesting(char** argv, void* mem, u32 len, u8 fault) {
   olivine_verdict = olivine_get_fuzz_input_hits();
 
   if (olivine_verdict > 1) {
-    OKF("@@@  Optset already seen %llu times  @@@", olivine_verdict);
+    BADF("@@@  Optset already seen %llu times  @@@", olivine_verdict);
   } else if (olivine_verdict == 1) {
-    OKF("@@@  Generated new optset  @@@");
+    WARNF("@@@  Generated new optset  @@@");
   } else {
     OKF("@@@  Did not trigger JIT compilation  @@@");
   }
