@@ -98,6 +98,7 @@ int olivine_jit_compiler_type = OLIVINE_JIT_COMPILER_NONE;
 u64 olivine_verdict = 0;
 
 static s32 olivine_jit_dump_fd = -1;
+u8* olivine_hook_cmdline = 0;
 #endif
 
 /* Lots of globals, but mostly for the status UI and other things where it
@@ -3329,15 +3330,10 @@ cleanup:
 #ifdef OLIVINE_COMMON
 
 static u64 olivine_get_fuzz_input_hits() {
-	/*u8* fn = alloc_printf("%s/.olivine_dump", out_dir);*/
-	/*u8* cmdline = alloc_printf("python3 /home/jfmcoronel/die/olivine_hook.py %d \"%s\"", olivine_jit_compiler_type, fn);*/
-	/*execute_sh(cmdline);*/
-
   u64 count;
   int lseek_ret;
-  /*int fd = open(fn, O_RDONLY);*/
-  /*read(fd, &count, sizeof(count));*/
-  /*close(fd);*/
+
+  execute_sh(olivine_hook_cmdline);
 
   lseek_ret = lseek(olivine_jit_dump_fd, 0, SEEK_SET);
   if (lseek_ret < 0) PFATAL("Failed to lseek before reading");
@@ -3346,11 +3342,6 @@ static u64 olivine_get_fuzz_input_hits() {
 
   lseek_ret = lseek(olivine_jit_dump_fd, 0, SEEK_SET);
   if (lseek_ret < 0) PFATAL("Failed to lseek after reading");
-
-	/*u8 *tmp = alloc_printf("%s/.olivine_dump", out_dir);*/
-  /*s32 tmp_fd = open(tmp, O_RDONLY);*/
-  /*if (tmp_fd < 0) PFATAL("Unable to open %s", tmp);*/
-  /*read(tmp_fd, &count, sizeof(count));*/
 
   return count;
 }
@@ -7779,9 +7770,12 @@ EXP_ST void setup_dirs_fds(void) {
   if (mkdir(tmp, 0700) && errno != EEXIST) PFATAL("Unable to create '%s'", tmp);
   ck_free(tmp);
 
+  // [jfmcoronel] Do not free other allocations
 	tmp = alloc_printf("%s/.olivine_dump", out_dir);
   olivine_jit_dump_fd = open(tmp, O_RDWR | O_CREAT, 0600);
   if (olivine_jit_dump_fd < 0) PFATAL("Unable to open %s", tmp);
+
+  olivine_hook_cmdline = alloc_printf("python3 /home/jfmcoronel/die/olivine_hook.py %d \"%s\"", olivine_jit_compiler_type, tmp);
   ck_free(tmp);
 #endif
 

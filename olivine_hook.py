@@ -134,8 +134,8 @@ else:
 
 
 # Execute JIT compiler for feedback
-print(jit_compiler_feedback_cmd)
-os.system(jit_compiler_feedback_cmd)
+# print(jit_compiler_feedback_cmd)
+# os.system(jit_compiler_feedback_cmd)
 
 with open(jit_compiler_feedback_filepath, "r") as f:
     lines = f.readlines()
