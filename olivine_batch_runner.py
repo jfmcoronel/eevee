@@ -50,7 +50,7 @@ def start(jit_compiler_code: str, until_n_inputs: int, seed: int):
     execute(f'tmux new-session -s fuzz -d "python3 {OLIVINE_BASEPATH}/olivine_batch_runner.py fuzz {jit_compiler_code} {until_n_inputs} {seed}"')
 
 
-def process_corpus(jit_compiler_code: str, until_n_inputs: int, seed: int):
+def process_corpus(jit_compiler_code: str, until_n_inputs: int, seed: int, skip_pruning: bool):
     execute(f'echo FLUSHALL | redis-cli -p {REDIS_PORT}')
     execute(f'cd {OLIVINE_BASEPATH} && rm -rf {OLIVINE_BASEPATH}/corpus/ && python3 ./fuzz/scripts/make_initial_corpus.py ./DIE-corpus ./corpus')
     execute('echo core | sudo tee /proc/sys/kernel/core_pattern')
@@ -69,7 +69,7 @@ def process_corpus(jit_compiler_code: str, until_n_inputs: int, seed: int):
             should_log_all_output=True,
             must_have_double_braces=True,
         ),
-    ]
+    ] if not skip_pruning else []
 
     populate_cmds: List[str] = [
         f'tmux rename-window -t prune-{{SLAVENUMBER}} populate-{{SLAVENUMBER}}',
@@ -194,12 +194,21 @@ def main():
         start(jit_compiler_code, until_n_inputs, seed)
 
     elif cmd == 'process-corpus':
-        jit_compiler_code, until_n_inputs, seed = sys.argv[2:]
+        skip_pruning = False
+
+        if len(sys.argv) == 3:
+            jit_compiler_code, until_n_inputs, seed = sys.argv[2:]
+        elif len(sys.argv) == 4:
+            jit_compiler_code, until_n_inputs, seed, skip_pruning_arg = sys.argv[2:]
+            if skip_pruning_arg == 'skip':
+                skip_pruning = True
+        else:
+            assert False, f'Incorrect number of arguments: {sys.argv}'
 
         seed = int(seed)
         until_n_inputs = int(until_n_inputs)
 
-        process_corpus(jit_compiler_code, until_n_inputs, seed)
+        process_corpus(jit_compiler_code, until_n_inputs, seed, skip_pruning)
 
     elif cmd == 'prune-corpus-with-slave':
         n, jit_compiler_code = sys.argv[2:]
