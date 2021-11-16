@@ -86,7 +86,7 @@ def prune_corpus_with_slave(n: str, jit_compiler_code: str):
     remaining = len(js_files)
     dump_suffix = f'2>&1; echo -e "\\n$?"'
 
-    assert jit_compiler_code != 'v8', f'Pruning of corpus via {jit_compiler_code} is not yet supported'
+    assert jit_compiler_code == 'v8', f'Pruning of corpus via {jit_compiler_code} is not yet supported'
 
     full_fuzz_target_str = get_fuzz_target_string_with_flags(jit_compiler_code)
 
