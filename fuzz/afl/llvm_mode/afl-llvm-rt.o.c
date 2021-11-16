@@ -95,6 +95,7 @@ static void __afl_map_shm(void) {
 static void __afl_start_forkserver(void) {
 
   // [jfmcoronel] Rewrite stdout log file
+  ftruncate(1, 0);
   lseek(1, 0, SEEK_SET);
 
   static u8 tmp[4];
