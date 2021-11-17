@@ -90,22 +90,22 @@
 #  define OLIVINE_JIT_COMPILER_CH 3
 
 #define OLIVINE_MSGRED(x...) do { \
-    SAYF(cLRD ".  -->> " x); \
+    SAYF(cLRD " .  -->> " x); \
     SAYF(cRST "\n"); \
   } while (0)
 
 #define OLIVINE_MSGYELLOW(x...) do { \
-    SAYF(cYEL ".  -->> " x); \
+    SAYF(cYEL " .  -->> " x); \
     SAYF(cRST "\n"); \
   } while (0)
 
 #define OLIVINE_MSGBLUE(x...) do { \
-    SAYF(cLBL ".  -->> " x); \
+    SAYF(cLBL " .  -->> " x); \
     SAYF(cRST "\n"); \
   } while (0)
 
 #define OLIVINE_MSGGREEN(x...) do { \
-    SAYF(cLGN ".  -->> " x); \
+    SAYF(cLGN " .  -->> " x); \
     SAYF(cRST "\n"); \
   } while (0)
 
@@ -3439,6 +3439,8 @@ static u8 save_if_interesting(char** argv, void* mem, u32 len, u8 fault) {
         if (olivine_verdict != 1) {
           return 0;
         }
+
+        OLIVINE_MSGGREEN("[FUZZ] New optset; no increase in code coverage");
 #else
         return 0;
 #endif
@@ -3460,6 +3462,15 @@ static u8 save_if_interesting(char** argv, void* mem, u32 len, u8 fault) {
 
     if (hnb == 2) {
       // queue_top->has_new_cov = 1;
+#ifdef OLIVINE_COMMON
+      if (olivine_verdict == 1) {
+        OLIVINE_MSGBLUE("[FUZZ] Both new code coverage & optset coverage");
+      } else if (olivine_verdict == 0) {
+        OLIVINE_MSGRED("[FUZZ] New code coverage; no optset");
+      } else {
+        OLIVINE_MSGYELLOW("[FUZZ] New code coverage; optset seen before");
+      }
+#endif
       queued_with_cov++;
     }
 
@@ -3522,6 +3533,9 @@ static u8 save_if_interesting(char** argv, void* mem, u32 len, u8 fault) {
       }
 
       unique_tmouts++;
+#ifdef OLIVINE_COMMON
+      OLIVINE_MSGYELLOW("[FUZZ] Timing-out fuzz input");
+#endif
 
       /* Before saving, we make sure that it's a genuine hang by re-running
          the target with a more generous timeout (unless the default timeout
@@ -3556,6 +3570,9 @@ static u8 save_if_interesting(char** argv, void* mem, u32 len, u8 fault) {
 #endif /* ^!SIMPLE_FILES */
 
       unique_hangs++;
+#ifdef OLIVINE_COMMON
+      OLIVINE_MSGRED("[FUZZ] Hanging fuzz input");
+#endif
 
       last_hang_time = get_cur_time();
 
@@ -3604,6 +3621,9 @@ keep_as_crash:
 #endif /* ^!SIMPLE_FILES */
 
       unique_crashes++;
+#ifdef OLIVINE_COMMON
+      OLIVINE_MSGRED("[FUZZ] Crashing fuzz input");
+#endif
 
       last_crash_time = get_cur_time();
       last_crash_execs = total_execs;
@@ -5008,12 +5028,16 @@ EXP_ST u8 common_fuzz_stuff(char** argv, u8* out_buf, u32 len) {
      to be abandoned. */
 
   if (skip_requested) {
+#ifdef OLIVINE_COMMON
     OLIVINE_MSGYELLOW("Ignoring skip request\n");
-
+    skip_requested = 0;
+    cur_skipped_paths++;
+#else
      skip_requested = 0;
-     /*cur_skipped_paths++;*/
-     /*return 1;*/
+     cur_skipped_paths++;
+     return 1;
 
+#endif
   }
 
   /* This handles FAULT_ERROR for us: */
