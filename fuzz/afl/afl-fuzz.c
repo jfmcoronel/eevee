@@ -99,7 +99,9 @@ u64 olivine_verdict = 0;
 
 static s32 olivine_jit_dump_fd = -1;
 static s32 olivine_keycount_fd = -1;
-u8* olivine_hook_cmdline = 0;
+u8* olivine_hook_cmdline_base = NULL;
+
+u8 *olivine_fuzz_input_unique_path = NULL;
 #endif
 
 /* Lots of globals, but mostly for the status UI and other things where it
@@ -3335,7 +3337,9 @@ static u64 olivine_get_fuzz_input_hits() {
   u64 count;
   int lseek_ret;
 
-  execute_sh(olivine_hook_cmdline);
+  u8 *tmp = alloc_printf("%s %s", olivine_hook_cmdline_base, olivine_fuzz_input_unique_path);
+  execute_sh(tmp);
+  ck_free(tmp);
 
   lseek_ret = lseek(olivine_keycount_fd, 0, SEEK_SET);
   if (lseek_ret < 0) PFATAL("Failed to lseek before reading");
@@ -4936,10 +4940,14 @@ EXP_ST u8 common_fuzz_stuff(char** argv, u8* out_buf, u32 len) {
     path = generated_inputs;
   }
 
-  u8 *fn = alloc_printf("%s/%s/%08d.js", out_dir, path, olivine_input_generation_ctr);
-  OKF("Writing to %s...", fn);
-  int fd = open(fn, O_WRONLY | O_CREAT, 0600);
-  ck_free(fn);
+  if (olivine_fuzz_input_unique_path) {
+    ck_free(olivine_fuzz_input_unique_path);
+    olivine_fuzz_input_unique_path = NULL;
+  }
+
+  olivine_fuzz_input_unique_path = alloc_printf("%s/%s/%08d.js", out_dir, path, olivine_input_generation_ctr);
+  OKF("Writing to %s...", olivine_fuzz_input_unique_path);
+  int fd = open(olivine_fuzz_input_unique_path, O_WRONLY | O_CREAT, 0600);
 
   FILE *fp = fdopen(fd, "w");
   if (!fp) PFATAL("fdopen() failed");
@@ -7778,7 +7786,7 @@ EXP_ST void setup_dirs_fds(void) {
 	tmp = alloc_printf("%s/.olivine_jitdump", out_dir);
   olivine_jit_dump_fd = open(tmp, O_WRONLY | O_CREAT, 0600);
   if (olivine_jit_dump_fd < 0) PFATAL("Unable to open %s", tmp);
-  olivine_hook_cmdline = alloc_printf("python3 /home/jfmcoronel/die/olivine_hook.py %d \"%s\"", olivine_jit_compiler_type, tmp);
+  olivine_hook_cmdline_base = alloc_printf("python3 /home/jfmcoronel/die/olivine_hook.py %d \"%s\"", olivine_jit_compiler_type, tmp);
   ck_free(tmp);
 
 	tmp = alloc_printf("%s/.olivine_keycount", out_dir);

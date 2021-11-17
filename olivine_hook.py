@@ -6,12 +6,15 @@ from typing import List
 import redis
 
 
+LOG_ALL_DUMPS = True
+
 JSC = 1
 V8 = 2
 CH = 3
 
 jit_compiler_type_number = int(sys.argv[1])
 jit_compiler_feedback_filepath = sys.argv[2]
+fuzz_input_unique_path = sys.argv[3]
 
 output_basepath = os.path.dirname(sys.argv[2])
 keycount_path = os.path.join(output_basepath, ".olivine_keycount")
@@ -23,17 +26,14 @@ def get_jsc_key(lines: List[str]):
 
     for line in lines:
         line = line.strip()
-        if ' changed the IR.' in line:
+        # FIXME: B8 concurrent log
+        if ' changed the IR.' in line and ' Phase ' in line:
             ctr[line] += 1
 
     key_parts: List[str] = []
     for key in ctr:
-        try:
-            new_key = key.split(' changed the IR.', maxsplit=1)[0].split(' Phase ', maxsplit=1)[1].replace(' ', '').strip()
-            key_parts.append(f"{new_key}:{ctr[key]}")
-        except IndexError as e:
-            print(key)
-            raise(e)
+        new_key = key.split(' changed the IR.', maxsplit=1)[0].split(' Phase ', maxsplit=1)[1].replace(' ', '').strip()
+        key_parts.append(f"{new_key}:{ctr[key]}")
 
     return ",".join(key_parts)
 
@@ -132,7 +132,6 @@ if __name__ == '__main__':
     with open(jit_compiler_feedback_filepath, "r", errors="ignore") as f:
         dump = f.read()
 
-
     if has_optset(dump):
         key = '@@@' + key_fn(dump.split('\n'))
 
@@ -148,3 +147,7 @@ if __name__ == '__main__':
     else:
         with open(keycount_path, 'wb') as f:
             f.write((0).to_bytes(8, 'little'))
+
+    if LOG_ALL_DUMPS:
+        with open(f'{fuzz_input_unique_path}.dump', 'w') as f:
+            f.write(dump)
