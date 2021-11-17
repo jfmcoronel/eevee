@@ -3337,7 +3337,7 @@ static u64 olivine_get_fuzz_input_hits() {
   u64 count;
   int lseek_ret;
 
-  u8 *tmp = alloc_printf("%s %s", olivine_hook_cmdline_base, olivine_fuzz_input_unique_path);
+  u8 *tmp = alloc_printf("%s \"%s\"", olivine_hook_cmdline_base, olivine_fuzz_input_unique_path);
   execute_sh(tmp);
   ck_free(tmp);
 
