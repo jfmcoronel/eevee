@@ -74,7 +74,7 @@ def main():
     n = n.zfill(2)
 
     if cmd == 'analysis-singlepass':
-        execute(f'tmux rename-window -t done-{n} analysis-{n}')
+        execute(f'tmux rename-window -t fuzz-{n} analysis-{n}')
         do_own_analysis_singlepass(n, jit_compiler_code)
 
         if int(n) == 1:

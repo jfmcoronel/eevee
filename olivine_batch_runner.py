@@ -184,9 +184,10 @@ def fuzz(jit_compiler_code: str, until_n_inputs: int, seed: int):
         fuzz_cmd,
         'echo "Running single-pass coverage..."',
         single_pass_optset_coverage_cmd,
+        'echo "Done"',
     ]
 
-    run_windowed_slaves_in_current_session(cmds, 'fuzz', True)
+    run_windowed_slaves_in_current_session(cmds, 'fuzz', False)
 
 
 def update_self():
