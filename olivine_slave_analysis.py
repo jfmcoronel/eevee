@@ -36,6 +36,7 @@ def do_own_analysis_singlepass(n: str, jit_compiler_code: str):
     output_basepath = f'{slave_output_dir}/@jit_feedback'
     generated_inputs_basepath = f'{slave_output_dir}/@generated_inputs/*.js'
     selected_inputs_basepath = f'{slave_output_dir}/@selected_inputs/*.js'
+    filtered_seeds_basepath = f'{slave_output_dir}/@filtered_seeds/*.js'
 
     cmd: List[str] = [
         f'rm -rf {output_basepath}',
@@ -46,6 +47,7 @@ def do_own_analysis_singlepass(n: str, jit_compiler_code: str):
 
     generate_for(generated_inputs_basepath, 'generated_')
     generate_for(selected_inputs_basepath, 'selected_')
+    generate_for(filtered_seeds_basepath, 'seed_')
 
 
 def generate_coverage_summary(path_info: PathInfo):
