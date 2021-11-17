@@ -4950,7 +4950,7 @@ EXP_ST u8 common_fuzz_stuff(char** argv, u8* out_buf, u32 len) {
   }
 
   olivine_fuzz_input_unique_path = alloc_printf("%s/%s/%08d.js", out_dir, path, olivine_input_generation_ctr);
-  OKF("  Writing to %s...", olivine_fuzz_input_unique_path);
+  OKF("  Writing to %s", olivine_fuzz_input_unique_path);
   int fd = open(olivine_fuzz_input_unique_path, O_WRONLY | O_CREAT, 0600);
 
   FILE *fp = fdopen(fd, "w");
@@ -7130,7 +7130,7 @@ static s32 generate_js(u8* cur_input, u8* tmp_outdir) {
   cmdline = alloc_printf("timeout 30 node %s/esfuzz.js %s %s %d %u > /dev/null",
                           ts_dir, cur_input, tmp_outdir, cnt, seed);
 
-  ACTF("Generating testcases...");
+  /*ACTF("Generating testcases...");*/
 
   status = execute_sh(cmdline);
 
