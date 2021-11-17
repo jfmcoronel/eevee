@@ -3354,7 +3354,7 @@ static u64 olivine_get_fuzz_input_hits() {
   return count;
 }
 
-void update_olivine_verdict() {
+void olivine_update_verdict() {
   olivine_verdict = olivine_get_fuzz_input_hits();
 
   if (olivine_verdict > 1) {
@@ -4971,7 +4971,7 @@ EXP_ST u8 common_fuzz_stuff(char** argv, u8* out_buf, u32 len) {
     if (subseq_tmouts++ > TMOUT_LIMIT) {
       BADF("  Skipped %d > %d", subseq_tmouts, TMOUT_LIMIT);
       // [jfmcoronel] Process skipped timeouts anyway
-      update_olivine_verdict();
+      olivine_update_verdict();
       cur_skipped_paths++;
       return 1;
     }
@@ -7062,10 +7062,10 @@ static s32 fuzz_dir(char* input_dir, char** argv) {
     actual_js_ctr++;
 
     if (in_dir) {
-        OKF("fuzz_dir (corpus file %d/%d; seed input %d)", i + 1, nl_cnt, actual_js_ctr);
+        OKF("  fuzz_dir (corpus file %d/%d; seed input %d)", i + 1, nl_cnt, actual_js_ctr);
     } else {
         // Counter is incremented in common_fuzz_stuff which is called after this
-        OKF("fuzz_dir (round %d, %d/%d; actual %d, total %d) [%d to generate] %s", olivine_round_ctr, i + 1, nl_cnt, actual_js_ctr, olivine_input_generation_ctr + 1, olivine_until_n_inputs, fn);
+        OKF("  fuzz_dir (round %d, %d/%d; actual %d, total %d) [%d to generate] %s", olivine_round_ctr, i + 1, nl_cnt, actual_js_ctr, olivine_input_generation_ctr + 1, olivine_until_n_inputs, fn);
     }
 #endif // OLIVINE_COMMON
 
@@ -7155,7 +7155,7 @@ static u8 fuzz_js(char** argv) {
   cmdline = alloc_printf("node %s/../TS/redis_ctrl.js getNextTestcase %s %d",
       own_loc, cur_input, olivine_round_ctr);
 
-  ACTF("Get a next testcase");
+  /*ACTF("Get a next testcase");*/
 
   execute_sh(cmdline);
 
@@ -7175,7 +7175,7 @@ static u8 fuzz_js(char** argv) {
 #ifdef OLIVINE_COMMON
   // Should not terminate corpus dry run
   if (!in_dir && olivine_until_n_inputs != 0 && olivine_input_generation_ctr >= olivine_until_n_inputs) {
-    ACTF("Stopping due to %d inputs reached...", olivine_until_n_inputs);
+    ACTF("  Stopping due to %d inputs reached...", olivine_until_n_inputs);
     stop_soon = 2;
   }
 #endif // OLIVINE_COMMON
