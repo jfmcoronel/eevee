@@ -54,12 +54,24 @@ def get_fuzz_target_flags(jit_compiler_code: str):
     return path_info_mapping[jit_compiler_code].optset_flags
 
 
+def get_cov_target_path(jit_compiler_code: str):
+    return path_info_mapping[jit_compiler_code].cov_target_path
+
+
 def get_fuzz_target_string_with_flags(jit_compiler_code: str):
     fuzz_target_path = get_fuzz_target_path(jit_compiler_code)
     fuzz_target_flags = get_fuzz_target_flags(jit_compiler_code)
     libs = get_lib_string(jit_compiler_code)
 
     return f'{fuzz_target_path} {fuzz_target_flags} {libs}'
+
+
+def get_cov_target_string_with_flags(jit_compiler_code: str):
+    cov_target_path = get_cov_target_path(jit_compiler_code)
+    fuzz_target_flags = get_fuzz_target_flags(jit_compiler_code)
+    libs = get_lib_string(jit_compiler_code)
+
+    return f'{cov_target_path} {fuzz_target_flags} {libs}'
 
 
 def get_lib_string(jit_compiler_code: str):
