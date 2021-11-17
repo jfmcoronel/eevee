@@ -17,18 +17,24 @@ if __name__ == '__main__':
     jit_compiler_code, fuzz_input_path = sys.argv[1:]
     os.system(f'cat {fuzz_input_path}')
 
-    input('-- Press ENTER to start --')
+    input('\n-- Press ENTER to start --')
 
     full_fuzz_target_str = get_fuzz_target_string_with_flags(jit_compiler_code)
     cmd = f'time {full_fuzz_target_str} {fuzz_input_path}'
 
     print(cmd)
 
-    output = subprocess.check_output(cmd, shell=True).decode('utf8', errors='ignore')
-    print(output)
+    try:
+        output = subprocess.check_output(cmd, shell=True).decode('utf8', errors='ignore')
+        return_code = '0'
+    except subprocess.CalledProcessError as e:
+        output = e.output
+        return_code = e.returncode
 
-    print()
-    input('-- Press ENTER to continue --')
+    print(output)
+    print('\nReturn code:', output)
+
+    input('\n-- Press ENTER to continue --')
 
     print()
 
