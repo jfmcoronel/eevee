@@ -6,7 +6,7 @@ from typing import List
 import redis
 
 
-LOG_ALL_DUMPS = True
+# LOG_ALL_DUMPS = True
 
 JSC = 1
 V8 = 2
@@ -148,10 +148,10 @@ if __name__ == '__main__':
         with open(keycount_path, 'wb') as f:
             f.write((0).to_bytes(8, 'little'))
 
-    if LOG_ALL_DUMPS:
-        log_dir = os.path.dirname(fuzz_input_unique_path)
-        base_filename = os.path.basename(fuzz_input_unique_path)
-        full_log_path = os.path.join(log_dir, f'dump.{base_filename}.txt')
+    # if LOG_ALL_DUMPS:
+    #     log_dir = os.path.dirname(fuzz_input_unique_path)
+    #     base_filename = os.path.basename(fuzz_input_unique_path)
+    #     full_log_path = os.path.join(log_dir, f'dump.{base_filename}.txt')
 
-        with open(full_log_path, 'w') as f:
-            f.write(dump)
+    #     with open(full_log_path, 'w') as f:
+    #         f.write(dump)
