@@ -124,7 +124,7 @@ if __name__ == '__main__':
     has_optset = has_optset_map[jit_compiler_type_number]
 
 
-    with open(jit_compiler_feedback_filepath, "r") as f:
+    with open(jit_compiler_feedback_filepath, "r", errors="ignore") as f:
         dump = f.read()
 
 
