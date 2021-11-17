@@ -3382,7 +3382,7 @@ static u8 save_if_interesting(char** argv, void* mem, u32 len, u8 fault) {
   u8  keeping = 0;//, res;
 
 #ifdef IS_OLIVINE
-  update_olivine_verdict();
+  olivine_update_verdict();
 #endif
 
 // [jfmcoronel] Conditional seems to be unintentional
