@@ -5015,7 +5015,7 @@ EXP_ST u8 common_fuzz_stuff(char** argv, u8* out_buf, u32 len) {
       // [jfmcoronel] Process skipped timeouts anyway
       olivine_update_verdict();
       cur_skipped_paths++;
-#ifdef OLIVINE_COMMON
+#ifdef IS_OLIVINE
       ret = 1;
 #else
       return 1;
@@ -5028,7 +5028,7 @@ EXP_ST u8 common_fuzz_stuff(char** argv, u8* out_buf, u32 len) {
      to be abandoned. */
 
   if (skip_requested) {
-#ifdef OLIVINE_COMMON
+#ifdef IS_OLIVINE
     OLIVINE_MSGYELLOW("Ignoring skip request\n");
     skip_requested = 0;
     cur_skipped_paths++;
@@ -5047,7 +5047,7 @@ EXP_ST u8 common_fuzz_stuff(char** argv, u8* out_buf, u32 len) {
   if (!(stage_cur % stats_update_freq) || stage_cur + 1 == stage_max)
     show_stats();
 
-#ifdef OLIVINE_COMMON
+#ifdef IS_OLIVINE
   return ret;
 #else
   return 0;
