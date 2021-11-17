@@ -64,8 +64,8 @@ def generate_coverage_summary(path_info: PathInfo):
 
     cmd_after: List[str] = [
         f'cd {path_info.cov_source_code_path}',
-        f'/usr/bin/lcov --capture --no-checksum --directory {path_info.cov_source_code_path} --output-file {lcovinfo_path} --gcov-tool {OLIVINE_BASEPATH}/gcov_for_clang.sh',
-        f'genhtml {lcovinfo_path} --output-directory {output_basepath} --ignore-errors=source',
+        f'/usr/bin/lcov --rc lcov_branch_coverage=1 --capture --no-checksum --directory {path_info.cov_source_code_path} --output-file {lcovinfo_path} --gcov-tool {OLIVINE_BASEPATH}/gcov_for_clang.sh',
+        f'genhtml {lcovinfo_path} --branch-coverage --output-directory {output_basepath} --ignore-errors=source',
         f'{{ echo keys "*" | redis-cli ; }} > {output_basepath}/keys.txt',
     ]
     execute(' ; '.join(cmd_after))
