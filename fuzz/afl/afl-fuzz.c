@@ -90,22 +90,22 @@
 #  define OLIVINE_JIT_COMPILER_CH 3
 
 #define OLIVINE_MSGRED(x...) do { \
-    SAYF(cLRD "  -->> " x); \
+    SAYF(cLRD ".  -->> " x); \
     SAYF(cRST "\n"); \
   } while (0)
 
 #define OLIVINE_MSGYELLOW(x...) do { \
-    SAYF(cYEL " -->> " x); \
+    SAYF(cYEL ".  -->> " x); \
     SAYF(cRST "\n"); \
   } while (0)
 
 #define OLIVINE_MSGBLUE(x...) do { \
-    SAYF(cLBL " -->> " x); \
+    SAYF(cLBL ".  -->> " x); \
     SAYF(cRST "\n"); \
   } while (0)
 
 #define OLIVINE_MSGGREEN(x...) do { \
-    SAYF(cLGN "--> " x); \
+    SAYF(cLGN .  "-->> " x); \
     SAYF(cRST "\n"); \
   } while (0)
 
