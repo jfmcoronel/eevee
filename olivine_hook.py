@@ -27,7 +27,7 @@ def get_jsc_key(lines: List[str]):
 
     key_parts: List[str] = []
     for key in ctr:
-        new_key = key.replace("Phase ", "").replace(" changed the IR.", "").replace(" ", "").strip()
+        new_key = key.split(" Phase ", maxsplit=1)[1].split(" changed the IR.", maxsplit=1)[0].strip()
         key_parts.append(f"{new_key}{ctr[key]}")
 
     return "".join(key_parts)
