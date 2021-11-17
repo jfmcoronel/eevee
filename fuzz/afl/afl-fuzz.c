@@ -3354,6 +3354,18 @@ static u64 olivine_get_fuzz_input_hits() {
   return count;
 }
 
+void update_olivine_verdict() {
+  olivine_verdict = olivine_get_fuzz_input_hits();
+
+  if (olivine_verdict > 1) {
+    WARNF("  Optset already seen %llu times\n", olivine_verdict);
+  } else if (olivine_verdict == 1) {
+    BADF("  Generated new optset\n");
+  } else {
+    OKF("  Did not trigger JIT compilation");
+  }
+}
+
 #endif
 
 
@@ -3370,15 +3382,7 @@ static u8 save_if_interesting(char** argv, void* mem, u32 len, u8 fault) {
   u8  keeping = 0;//, res;
 
 #ifdef IS_OLIVINE
-  olivine_verdict = olivine_get_fuzz_input_hits();
-
-  if (olivine_verdict > 1) {
-    WARNF("Optset already seen %llu times\n", olivine_verdict);
-  } else if (olivine_verdict == 1) {
-    BADF("Generated new optset\n");
-  } else {
-    OKF("Did not trigger JIT compilation");
-  }
+  update_olivine_verdict();
 #endif
 
 // [jfmcoronel] Conditional seems to be unintentional
@@ -4946,7 +4950,7 @@ EXP_ST u8 common_fuzz_stuff(char** argv, u8* out_buf, u32 len) {
   }
 
   olivine_fuzz_input_unique_path = alloc_printf("%s/%s/%08d.js", out_dir, path, olivine_input_generation_ctr);
-  OKF("Writing to %s...", olivine_fuzz_input_unique_path);
+  OKF("  Writing to %s...", olivine_fuzz_input_unique_path);
   int fd = open(olivine_fuzz_input_unique_path, O_WRONLY | O_CREAT, 0600);
 
   FILE *fp = fdopen(fd, "w");
@@ -4962,10 +4966,13 @@ EXP_ST u8 common_fuzz_stuff(char** argv, u8* out_buf, u32 len) {
   if (stop_soon) return 1;
 
   if (fault == FAULT_TMOUT) {
-    BADF("Detected timeout");
+    BADF("  Detected timeout");
+
+    // [jfmcoronel] Process timeouts
+    update_olivine_verdict();
 
     if (subseq_tmouts++ > TMOUT_LIMIT) {
-      BADF("Skipped %d > %d", subseq_tmouts, TMOUT_LIMIT);
+      BADF("  Skipped %d > %d", subseq_tmouts, TMOUT_LIMIT);
       cur_skipped_paths++;
       return 1;
     }
@@ -4976,7 +4983,7 @@ EXP_ST u8 common_fuzz_stuff(char** argv, u8* out_buf, u32 len) {
      to be abandoned. */
 
   if (skip_requested) {
-    BADF("Skip requested");
+    BADF("  Skip requested");
 
      skip_requested = 0;
      cur_skipped_paths++;
