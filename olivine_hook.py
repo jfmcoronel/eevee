@@ -149,5 +149,9 @@ if __name__ == '__main__':
             f.write((0).to_bytes(8, 'little'))
 
     if LOG_ALL_DUMPS:
-        with open(f'{fuzz_input_unique_path}.dump', 'w') as f:
+        log_dir = os.path.dirname(fuzz_input_unique_path)
+        base_filename = os.path.basename(fuzz_input_unique_path)
+        full_log_path = os.path.join(log_dir, f'dump.{base_filename}.txt')
+
+        with open(full_log_path, 'w') as f:
             f.write(dump)

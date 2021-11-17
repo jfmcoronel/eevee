@@ -15,7 +15,6 @@ class PathInfo(NamedTuple):
     cov_target_path: str
     optset_flags: str
     cov_source_code_path: str
-    env_vars: str
 
 
 v8_path_info = PathInfo(
@@ -23,7 +22,6 @@ v8_path_info = PathInfo(
     cov_target_path=f'{OLIVINE_HOME}/die/engines/v8/v8/out/Debug/d8',
     optset_flags='--trace-turbo-reduction',
     cov_source_code_path=f'{OLIVINE_HOME}/die/engines/v8/v8/out/Debug/',
-    env_vars='',
 )
 
 ch_path_info = PathInfo(
@@ -31,15 +29,13 @@ ch_path_info = PathInfo(
     cov_target_path=f'{OLIVINE_HOME}/ch-cov-src/out/Debug/ch',
     optset_flags='-bgjit- -dump:backend',
     cov_source_code_path=f'{OLIVINE_HOME}/ch-cov-src/out/Debug/',
-    env_vars='',
 )
 
 jsc_path_info = PathInfo(
     fuzz_target_path=f'{OLIVINE_HOME}/jsc',
     cov_target_path=f'{OLIVINE_HOME}/jsc-cov',
-    optset_flags='',
+    optset_flags='--useConcurrentJIT=false --verboseCompilation=true',
     cov_source_code_path=f'{OLIVINE_HOME}/webkit/WebKitBuild/Debug/',
-    env_vars='JSC_useConcurrentJIT=false JSC_verboseCompilation=true',
 )
 
 # Python 3.6 typing woes
@@ -56,10 +52,6 @@ def get_fuzz_target_path(jit_compiler_code: str):
 
 def get_fuzz_target_flags(jit_compiler_code: str):
     return path_info_mapping[jit_compiler_code].optset_flags
-
-
-def get_fuzz_target_env_vars_string(jit_compiler_code: str):
-    return path_info_mapping[jit_compiler_code].env_vars
 
 
 def get_fuzz_target_string_with_flags(jit_compiler_code: str):

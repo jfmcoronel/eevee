@@ -10,7 +10,6 @@ from olivine_helpers import (
     PathInfo,
     TIMEOUT,
     execute,
-    get_fuzz_target_env_vars_string,
     get_fuzz_target_string_with_flags,
     get_path_info,
     wait_until_tmux_windows_closed,
@@ -21,7 +20,6 @@ from olivine_helpers import (
 
 def do_own_analysis_singlepass(n: str, jit_compiler_code: str):
     full_fuzz_target_str = get_fuzz_target_string_with_flags(jit_compiler_code)
-    fuzz_env_vars = get_fuzz_target_env_vars_string(jit_compiler_code)
 
     def generate_for(input_basepath: str, prefix: str):
         for full_js_path in sorted(glob.glob(input_basepath)):
@@ -30,7 +28,7 @@ def do_own_analysis_singlepass(n: str, jit_compiler_code: str):
             optset_output_path = os.path.join(output_basepath, f'{prefix}{js_basename}.txt')
 
             dump_suffix = f'>{optset_output_path} 2>&1; echo -e "\\n$?" >> {optset_output_path}'
-            actual_cmd = f'{fuzz_env_vars} timeout {TIMEOUT} {full_fuzz_target_str} {full_js_path} {dump_suffix}'
+            actual_cmd = f'timeout {TIMEOUT} {full_fuzz_target_str} {full_js_path} {dump_suffix}'
 
             execute(actual_cmd)
 
