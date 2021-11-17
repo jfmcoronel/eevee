@@ -4968,11 +4968,10 @@ EXP_ST u8 common_fuzz_stuff(char** argv, u8* out_buf, u32 len) {
   if (fault == FAULT_TMOUT) {
     BADF("  Detected timeout");
 
-    // [jfmcoronel] Process timeouts
-    update_olivine_verdict();
-
     if (subseq_tmouts++ > TMOUT_LIMIT) {
       BADF("  Skipped %d > %d", subseq_tmouts, TMOUT_LIMIT);
+      // [jfmcoronel] Process skipped timeouts anyway
+      update_olivine_verdict();
       cur_skipped_paths++;
       return 1;
     }
@@ -4983,11 +4982,11 @@ EXP_ST u8 common_fuzz_stuff(char** argv, u8* out_buf, u32 len) {
      to be abandoned. */
 
   if (skip_requested) {
-    BADF("  Skip requested");
+    BADF("  Ignoring skip request");
 
      skip_requested = 0;
-     cur_skipped_paths++;
-     return 1;
+     /*cur_skipped_paths++;*/
+     /*return 1;*/
 
   }
 
