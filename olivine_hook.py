@@ -12,14 +12,6 @@ JSC = 1
 V8 = 2
 CH = 3
 
-jit_compiler_type_number = int(sys.argv[1])
-jit_compiler_feedback_filepath = sys.argv[2]
-fuzz_input_unique_path = sys.argv[3]
-
-output_basepath = os.path.dirname(sys.argv[2])
-keycount_path = os.path.join(output_basepath, ".olivine_keycount")
-key_log_path = os.path.join(output_basepath, "log-keys.txt")
-
 
 def get_jsc_key(lines: List[str]):
     ctr = Counter()  # type: Counter[str]
@@ -113,6 +105,14 @@ def get_ch_has_optset(dump: str):
 
 
 if __name__ == '__main__':
+    jit_compiler_type_number = int(sys.argv[1])
+    jit_compiler_feedback_filepath = sys.argv[2]
+    fuzz_input_unique_path = sys.argv[3]
+
+    output_basepath = os.path.dirname(sys.argv[2])
+    keycount_path = os.path.join(output_basepath, ".olivine_keycount")
+    key_log_path = os.path.join(output_basepath, "log-keys.txt")
+
     key_map = {
         JSC: get_jsc_key,
         V8: get_v8_key,
