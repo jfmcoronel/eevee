@@ -11,8 +11,9 @@ V8 = 2
 CH = 3
 
 jit_compiler_type_number = int(sys.argv[1])
-output_basepath = os.path.dirname(sys.argv[2])
 jit_compiler_feedback_filepath = sys.argv[2]
+
+output_basepath = os.path.dirname(sys.argv[2])
 keycount_path = os.path.join(output_basepath, ".olivine_keycount")
 key_log_path = os.path.join(output_basepath, "log-keys.txt")
 
@@ -27,8 +28,12 @@ def get_jsc_key(lines: List[str]):
 
     key_parts: List[str] = []
     for key in ctr:
-        new_key = key.split(' changed the IR.', maxsplit=1)[0].split(' Phase ', maxsplit=1)[1].replace(' ', '').strip()
-        key_parts.append(f"{new_key}:{ctr[key]}")
+        try:
+            new_key = key.split(' changed the IR.', maxsplit=1)[0].split(' Phase ', maxsplit=1)[1].replace(' ', '').strip()
+            key_parts.append(f"{new_key}:{ctr[key]}")
+        except IndexError as e:
+            print(key)
+            raise(e)
 
     return ",".join(key_parts)
 
