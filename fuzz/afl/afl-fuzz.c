@@ -3437,6 +3437,7 @@ static u8 save_if_interesting(char** argv, void* mem, u32 len, u8 fault) {
 #ifdef IS_OLIVINE
         // [jfmcoronel] AFL will normally exit, so Olivine can intercept
         if (olivine_verdict != 1) {
+          OLIVINE_MSGBLUE("[FUZZ] Not interesting");
           return 0;
         }
 
