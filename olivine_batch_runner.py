@@ -132,7 +132,7 @@ def prune_corpus_with_slave(n: str, jit_compiler_code: str):
         basename = os.path.basename(full_js_path)
         print(actual_cmd)
 
-        result = subprocess.check_output(actual_cmd).decode('utf8', errors="ignore")
+        result = subprocess.check_output(actual_cmd, shell=True).decode('utf8', errors="ignore")
         dump_filename = f'added.{basename}.txt'
 
         if not has_optset(result):
