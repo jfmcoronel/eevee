@@ -105,7 +105,7 @@
   } while (0)
 
 #define OLIVINE_MSGGREEN(x...) do { \
-    SAYF(cLGN .  "-->> " x); \
+    SAYF(cLGN ".  -->> " x); \
     SAYF(cRST "\n"); \
   } while (0)
 
