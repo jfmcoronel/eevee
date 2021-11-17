@@ -95,13 +95,32 @@ def prune_corpus_with_slave(n: str, jit_compiler_code: str):
     remaining = len(js_files)
     dump_suffix = f'2>&1; echo -e "\\n$?"'
 
-    assert jit_compiler_code == 'v8', f'Pruning of corpus via {jit_compiler_code} is not yet supported'
-
     prune_dir = f'{OLIVINE_BASEPATH}/{OLIVINE_SLAVE_OUTPUT_DIR_PREFIX}{n}/@prune-log'
     os.makedirs(prune_dir)
 
     full_fuzz_target_str = get_fuzz_target_string_with_flags(jit_compiler_code)
     fuzz_env_vars = get_fuzz_target_env_vars_string(jit_compiler_code)
+
+    def factory_has_optset():
+        def v8_has_optset(dump: str):
+            return ' by reducer ' in dump
+
+        def ch_has_optset(dump: str):
+            return 'IR after' in dump
+
+        def jsc_has_optset(dump: str):
+            return ' changed the IR' in dump
+
+        if jit_compiler_code == 'v8':
+            return v8_has_optset
+        elif jit_compiler_code == 'ch':
+            return ch_has_optset
+        elif jit_compiler_code == 'jsc':
+            return jsc_has_optset
+        else:
+            assert False, f'No has_optset function for {jit_compiler_code}'
+
+    has_optset = factory_has_optset()
 
     for full_js_path in js_files:
         actual_cmd = f'{fuzz_env_vars} timeout {TIMEOUT} {full_fuzz_target_str} {full_js_path} {dump_suffix}'
@@ -111,7 +130,7 @@ def prune_corpus_with_slave(n: str, jit_compiler_code: str):
         result = os.popen(actual_cmd).read().strip()
         dump_filename = f'added.{basename}.txt'
 
-        if ' by reducer ' not in result:
+        if not has_optset(result):
             print(f'Deleting {full_js_path} ({remaining} seeds left)')
             os.remove(full_js_path)
             remaining -= 1
