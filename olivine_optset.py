@@ -20,7 +20,7 @@ if __name__ == '__main__':
     input('\n-- Press ENTER to start --')
 
     full_fuzz_target_str = get_fuzz_target_string_with_flags(jit_compiler_code)
-    cmd = f'time {full_fuzz_target_str} {fuzz_input_path}'
+    cmd = f'''bash -c ' time {{ {full_fuzz_target_str} {fuzz_input_path} ; }} ' '''
 
     print(cmd)
 
@@ -32,7 +32,7 @@ if __name__ == '__main__':
         return_code = e.returncode
 
     print(output)
-    print('\nReturn code:', output)
+    print('\nReturn code:', return_code)
 
     input('\n-- Press ENTER to continue --')
 
