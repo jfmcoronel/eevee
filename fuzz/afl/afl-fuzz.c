@@ -89,6 +89,26 @@
 #  define OLIVINE_JIT_COMPILER_V8 2
 #  define OLIVINE_JIT_COMPILER_CH 3
 
+#define OLIVINE_MSGRED(x...) do { \
+    SAYF(cLRD "--> " x); \
+    SAYF(cRST "\n"); \
+  } while (0)
+
+#define OLIVINE_MSGYELLOW(x...) do { \
+    SAYF(cBRI "--> " x); \
+    SAYF(cRST "\n"); \
+  } while (0)
+
+#define OLIVINE_MSGBLUE(x...) do { \
+    SAYF(cLBL "--> " x); \
+    SAYF(cRST "\n"); \
+  } while (0)
+
+#define OLIVINE_MSGGREEN(x...) do { \
+    SAYF(cLGN "--> " x); \
+    SAYF(cRST "\n"); \
+  } while (0)
+
 int olivine_until_n_inputs = 0;
 int olivine_input_generation_ctr = 0;
 int olivine_round_ctr = 0;
@@ -3358,11 +3378,11 @@ void olivine_update_verdict() {
   olivine_verdict = olivine_get_fuzz_input_hits();
 
   if (olivine_verdict > 1) {
-    WARNF("  Optset already seen %llu times\n", olivine_verdict);
+    OLIVINE_MSGYELLOW("[OPTSET] Optset already seen %llu times\n", olivine_verdict);
   } else if (olivine_verdict == 1) {
-    BADF("  Generated new optset\n");
+    OLIVINE_MSGGREEN("[OPTSET] Generated new optset\n");
   } else {
-    OKF("  Did not trigger JIT compilation");
+    OLIVINE_MSGRED("[OPTSET] Did not trigger JIT compilation");
   }
 }
 
@@ -4932,6 +4952,8 @@ EXP_ST u8 common_fuzz_stuff(char** argv, u8* out_buf, u32 len) {
   write_to_testcase(out_buf, len);
 
 #ifdef OLIVINE_COMMON
+  int ret = 0;
+
   olivine_input_generation_ctr++;
 
   char *generated_inputs = "@generated_inputs";
@@ -4950,7 +4972,7 @@ EXP_ST u8 common_fuzz_stuff(char** argv, u8* out_buf, u32 len) {
   }
 
   olivine_fuzz_input_unique_path = alloc_printf("%s/%s/%08d.js", out_dir, path, olivine_input_generation_ctr);
-  OKF("  Writing to %s", olivine_fuzz_input_unique_path);
+  OLIVINE_MSGBLUE("Writing to %s", olivine_fuzz_input_unique_path);
   int fd = open(olivine_fuzz_input_unique_path, O_WRONLY | O_CREAT, 0600);
 
   FILE *fp = fdopen(fd, "w");
@@ -4966,14 +4988,18 @@ EXP_ST u8 common_fuzz_stuff(char** argv, u8* out_buf, u32 len) {
   if (stop_soon) return 1;
 
   if (fault == FAULT_TMOUT) {
-    BADF("  Detected timeout");
+    OLIVINE_MSGYELLOW("Detected timeout");
 
     if (subseq_tmouts++ > TMOUT_LIMIT) {
-      BADF("  Skipped %d > %d, not adding to queue", subseq_tmouts, TMOUT_LIMIT);
+      OLIVINE_MSGYELLOW("Skipped is %d > %d, but will still continue", subseq_tmouts, TMOUT_LIMIT);
       // [jfmcoronel] Process skipped timeouts anyway
       olivine_update_verdict();
       cur_skipped_paths++;
+#ifdef OLIVINE_COMMON
+      ret = 1;
+#else
       return 1;
+#endif
     }
 
   } else subseq_tmouts = 0;
@@ -4982,7 +5008,7 @@ EXP_ST u8 common_fuzz_stuff(char** argv, u8* out_buf, u32 len) {
      to be abandoned. */
 
   if (skip_requested) {
-    BADF("  Ignoring skip request\n");
+    OLIVINE_MSGYELLOW("Ignoring skip request\n");
 
      skip_requested = 0;
      /*cur_skipped_paths++;*/
@@ -4997,7 +5023,11 @@ EXP_ST u8 common_fuzz_stuff(char** argv, u8* out_buf, u32 len) {
   if (!(stage_cur % stats_update_freq) || stage_cur + 1 == stage_max)
     show_stats();
 
+#ifdef OLIVINE_COMMON
+  return ret;
+#else
   return 0;
+#endif
 
 }
 
@@ -7062,10 +7092,10 @@ static s32 fuzz_dir(char* input_dir, char** argv) {
     actual_js_ctr++;
 
     if (in_dir) {
-        OKF("  fuzz_dir (corpus file %d/%d; seed input %d)", i + 1, nl_cnt, actual_js_ctr);
+        OLIVINE_MSGGREEN("fuzz_dir (corpus file %d/%d; seed input %d)", i + 1, nl_cnt, actual_js_ctr);
     } else {
         // Counter is incremented in common_fuzz_stuff which is called after this
-        OKF("  fuzz_dir (round %d, %d/%d; actual %d, total %d) [%d to generate] %s", olivine_round_ctr, i + 1, nl_cnt, actual_js_ctr, olivine_input_generation_ctr + 1, olivine_until_n_inputs, fn);
+        OLIVINE_MSGGREEN("fuzz_dir (round %d, %d/%d; actual %d, total %d) [%d to generate] %s", olivine_round_ctr, i + 1, nl_cnt, actual_js_ctr, olivine_input_generation_ctr + 1, olivine_until_n_inputs, fn);
     }
 #endif // OLIVINE_COMMON
 
@@ -7175,7 +7205,7 @@ static u8 fuzz_js(char** argv) {
 #ifdef OLIVINE_COMMON
   // Should not terminate corpus dry run
   if (!in_dir && olivine_until_n_inputs != 0 && olivine_input_generation_ctr >= olivine_until_n_inputs) {
-    ACTF("  Stopping due to %d inputs reached...", olivine_until_n_inputs);
+    OLIVINE_MSGGREEN("Stopping due to %d inputs reached...", olivine_until_n_inputs);
     stop_soon = 2;
   }
 #endif // OLIVINE_COMMON
@@ -8444,7 +8474,7 @@ int main(int argc, char** argv) {
           if (sscanf(optarg, "%u", &olivine_until_n_inputs) < 1 ||
               optarg[0] == '-') FATAL("Bad syntax used for -e");
 
-          ACTF("Will stop after %u fuzz inputs generated locally", olivine_until_n_inputs);
+          OLIVINE_MSGGREEN("Will stop after %u fuzz inputs generated locally", olivine_until_n_inputs);
 
           break;
 
