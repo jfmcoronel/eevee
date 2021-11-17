@@ -17,11 +17,11 @@ from olivine_helpers import (
 )
 
 # Usage:
+# python3 olivine_batch_runner.py done-pruning {jitCompilerCode} {untilNInputs} {seed}
 # python3 olivine_batch_runner.py start {jitCompilerCode} {untilNInputs} {seed}
 # python3 olivine_batch_runner.py process-corpus {jitCompilerCode} {untilNInputs} {seed}
 # python3 olivine_batch_runner.py prune-corpus-with-slave {n} {jitCompilerCode}
 # python3 olivine_batch_runner.py populate-with-slave {n} {jitCompilerCode} {untilNInputs} {seed}
-# python3 olivine_batch_runner.py populate-only {jitCompilerCode} {untilNInputs} {seed}
 # python3 olivine_batch_runner.py fuzz {jitCompilerCode} {untilNInputs} {seed}
 
 
@@ -50,6 +50,16 @@ def start(jit_compiler_code: str, until_n_inputs: int, seed: int):
     wait_until_tmux_session_closed('corpus', 10)
 
     execute(f'tmux new-session -s fuzz -d "python3 {OLIVINE_BASEPATH}/olivine_batch_runner.py fuzz {jit_compiler_code} {until_n_inputs} {seed}"')
+
+
+def start_without_pruning(jit_compiler_code: str, until_n_inputs: int, seed: int):
+    # Enables running each phase in a new tmux session
+    execute(f'tmux new-session -s corpusnoprune -d "python3 {OLIVINE_BASEPATH}/olivine_batch_runner.py process-corpus-no-pruning {jit_compiler_code} {until_n_inputs} {seed}"')
+
+    # Must wait for all slaves to finish
+    wait_until_tmux_session_closed('corpusnoprune', 10)
+
+    execute(f'tmux new-session -s fuzznoprune -d "python3 {OLIVINE_BASEPATH}/olivine_batch_runner.py fuzz {jit_compiler_code} {until_n_inputs} {seed}"')
 
 
 def process_corpus(jit_compiler_code: str, until_n_inputs: int, seed: int, populate_only: bool = False):
@@ -86,10 +96,6 @@ def process_corpus(jit_compiler_code: str, until_n_inputs: int, seed: int, popul
     run_windowed_slaves_in_current_session(cmds, 'corpus', False)
 
 
-def populate_only(jit_compiler_code: str, until_n_inputs: int, seed: int):
-    process_corpus(jit_compiler_code, until_n_inputs, seed, True)
-
-
 def prune_corpus_with_slave(n: str, jit_compiler_code: str):
     js_files = sorted(glob.glob(f'{OLIVINE_BASEPATH}/corpus/{OLIVINE_SLAVE_OUTPUT_DIR_PREFIX}{n}/*.js'))
     remaining = len(js_files)
@@ -109,7 +115,7 @@ def prune_corpus_with_slave(n: str, jit_compiler_code: str):
             return 'IR after' in dump
 
         def jsc_has_optset(dump: str):
-            return ' changed the IR' in dump
+            return ' changed the IR.' in dump
 
         if jit_compiler_code == 'v8':
             return v8_has_optset
@@ -186,32 +192,42 @@ def fuzz(jit_compiler_code: str, until_n_inputs: int, seed: int):
     run_windowed_slaves_in_current_session(cmds, 'fuzz', True)
 
 
+def update_self():
+    # Update self first
+    updater_cmd = cmd_with_time_logging(
+        f'cd {OLIVINE_BASEPATH} && git pull && ./compile.sh',
+        f'~/log-start.txt',
+        should_log_all_output=True,
+        must_have_double_braces=False,
+    )
+    execute(updater_cmd)
+
+    afl_path = os.path.join(OLIVINE_BASEPATH, 'fuzz', 'afl', 'afl-fuzz')
+
+    if not os.path.exists(afl_path):
+        with open(os.path.expanduser('~/log-start.txt'), 'r') as f:
+            print(f.read())
+
+        print(afl_path)
+        print('\nAFL executable does not exist')
+        exit(-1)
+
+
 def main():
     cmd = sys.argv[1]
     print(cmd)
 
-    if cmd == 'start':
-        # Update self first
-        updater_cmd = cmd_with_time_logging(
-            f'cd {OLIVINE_BASEPATH} && git pull && ./compile.sh',
-            f'~/log-start.txt',
-            should_log_all_output=True,
-            must_have_double_braces=False,
-        )
-        execute(updater_cmd)
-
-        afl_path = os.path.join(OLIVINE_BASEPATH, 'fuzz', 'afl', 'afl-fuzz')
-
-        if not os.path.exists(afl_path):
-            with open(os.path.expanduser('~/log-start.txt'), 'r') as f:
-                print(f.read())
-
-            print(afl_path)
-            print('\nAFL executable does not exist')
-            exit(-1)
+    if cmd in 'start':
+        update_self()
 
         # Reexecute self
         execute(f"python3 {sys.argv[0]} true-start {' '.join(sys.argv[2:])}")
+
+    elif cmd in 'no-prune':
+        update_self()
+
+        # Reexecute self
+        execute(f"python3 {sys.argv[0]} true-no-prune {' '.join(sys.argv[2:])}")
 
     elif cmd == 'true-start':
         jit_compiler_code, until_n_inputs, seed = sys.argv[2:]
@@ -221,6 +237,16 @@ def main():
 
         start(jit_compiler_code, until_n_inputs, seed)
 
+    elif cmd == 'true-no-prune':
+        update_self()
+
+        jit_compiler_code, until_n_inputs, seed = sys.argv[2:]
+
+        seed = int(seed)
+        until_n_inputs = int(until_n_inputs)
+
+        start_without_pruning(jit_compiler_code, until_n_inputs, seed)
+
     elif cmd == 'process-corpus':
         jit_compiler_code, until_n_inputs, seed = sys.argv[2:]
 
@@ -228,6 +254,14 @@ def main():
         until_n_inputs = int(until_n_inputs)
 
         process_corpus(jit_compiler_code, until_n_inputs, seed)
+
+    elif cmd == 'process-corpus-no-pruning':
+        jit_compiler_code, until_n_inputs, seed = sys.argv[2:]
+
+        seed = int(seed)
+        until_n_inputs = int(until_n_inputs)
+
+        process_corpus(jit_compiler_code, until_n_inputs, seed, populate_only=True)
 
     elif cmd == 'prune-corpus-with-slave':
         n, jit_compiler_code = sys.argv[2:]
@@ -241,14 +275,6 @@ def main():
         until_n_inputs = int(until_n_inputs)
 
         populate_with_slave(n, jit_compiler_code, until_n_inputs, seed)
-
-    elif cmd == 'populate-only':
-        jit_compiler_code, until_n_inputs, seed = sys.argv[2:]
-
-        seed = int(seed)
-        until_n_inputs = int(until_n_inputs)
-
-        populate_only(jit_compiler_code, until_n_inputs, seed)
 
     elif cmd == 'fuzz':
         jit_compiler_code, until_n_inputs, seed = sys.argv[2:]
