@@ -200,6 +200,7 @@ def update_self():
         must_have_double_braces=False,
     )
     execute(updater_cmd)
+    execute('pip3 install hiredis')
 
     afl_path = os.path.join(OLIVINE_BASEPATH, 'fuzz', 'afl', 'afl-fuzz')
 
