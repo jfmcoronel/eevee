@@ -201,8 +201,6 @@ def update_self():
     )
     execute(updater_cmd)
     execute('pip3 install hiredis')
-    execute('ln -s ~/webkit/WebKitBuild/Release/bin/jsc ~/jsc')
-    execute('ln -s ~/webkit/WebKitBuild/Debug/bin/jsc ~/jsc-cov')
 
     afl_path = os.path.join(OLIVINE_BASEPATH, 'fuzz', 'afl', 'afl-fuzz')
 
