@@ -4962,8 +4962,10 @@ EXP_ST u8 common_fuzz_stuff(char** argv, u8* out_buf, u32 len) {
   if (stop_soon) return 1;
 
   if (fault == FAULT_TMOUT) {
+    BADF("Detected timeout");
 
     if (subseq_tmouts++ > TMOUT_LIMIT) {
+      BADF("Skipped %d > %d", subseq_tmouts, TMOUT_LIMIT);
       cur_skipped_paths++;
       return 1;
     }
@@ -4974,6 +4976,7 @@ EXP_ST u8 common_fuzz_stuff(char** argv, u8* out_buf, u32 len) {
      to be abandoned. */
 
   if (skip_requested) {
+    BADF("Skip requested");
 
      skip_requested = 0;
      cur_skipped_paths++;
