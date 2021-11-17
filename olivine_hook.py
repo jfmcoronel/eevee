@@ -22,19 +22,19 @@ def get_jsc_key(lines: List[str]):
 
     for line in lines:
         line = line.strip()
-        if ' changed the IR' in line:
+        if ' changed the IR.' in line:
             ctr[line] += 1
 
     key_parts: List[str] = []
     for key in ctr:
-        new_key = key.replace("Phase ", "").replace(" changed the IR", "").replace(" ", "").strip()
+        new_key = key.replace("Phase ", "").replace(" changed the IR.", "").replace(" ", "").strip()
         key_parts.append(f"{new_key}{ctr[key]}")
 
     return "".join(key_parts)
 
 
 def get_jsc_has_optset(dump: str):
-    return ' changed the IR' in dump
+    return ' changed the IR.' in dump
 
 
 def get_v8_key(lines: List[str]):
