@@ -28,7 +28,7 @@ if __name__ == '__main__':
         output = subprocess.check_output(cmd, shell=True).decode('utf8', errors='ignore')
         return_code = '0'
     except subprocess.CalledProcessError as e:
-        output = e.output
+        output = e.output.decode('utf8', errors='ignore')
         return_code = e.returncode
 
     print(output)
