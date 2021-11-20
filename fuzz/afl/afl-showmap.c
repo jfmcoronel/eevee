@@ -21,6 +21,8 @@
 
  */
 
+#include "olivine.h"
+
 #define AFL_MAIN
 
 #include "config.h"
@@ -60,6 +62,11 @@ static u32 exec_tmout;                /* Exec timeout (ms)                 */
 static u64 mem_limit = MEM_LIMIT;     /* Memory limit (MB)                 */
 
 static s32 shm_id;                    /* ID of the SHM region              */
+
+#ifdef OLIVINE_COMMON
+static s32 olivine_shm_id;
+static u8* olivine_trace_bits;
+#endif // OLIVINE_COMMON
 
 static u8  quiet_mode,                /* Hide non-essential messages?      */
            edges_only,                /* Ignore hit counts?                */
@@ -131,6 +138,9 @@ static void classify_counts(u8* mem, const u8* map) {
 static void remove_shm(void) {
 
   shmctl(shm_id, IPC_RMID, NULL);
+#ifdef OLIVINE_COMMON
+  shmctl(olivine_shm_id, IPC_RMID, NULL);
+#endif // OLIVINE_COMMON
 
 }
 
@@ -156,6 +166,19 @@ static void setup_shm(void) {
   trace_bits = shmat(shm_id, NULL, 0);
   
   if (!trace_bits) PFATAL("shmat() failed");
+
+#ifdef OLIVINE_COMMON
+  olivine_shm_id = shmget(IPC_PRIVATE, MAP_SIZE, IPC_CREAT | IPC_EXCL | 0600);
+  if (olivine_shm_id < 0) PFATAL("shmget() for Olivine failed");
+  atexit(remove_shm);
+
+  shm_str = alloc_printf("%d", olivine_shm_id);
+  setenv(OLIVINE_SHM_ENV_VAR, shm_str, 1);
+  ck_free(shm_str);
+
+  olivine_trace_bits = shmat(olivine_shm_id, NULL, 0);
+  if (!olivine_trace_bits) PFATAL("shmat() for Olivine failed");
+#endif // OLIVINE_COMMON
 
 }
 

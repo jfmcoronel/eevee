@@ -19,6 +19,8 @@
 
 */
 
+#include "../olivine.h"
+
 #include "../config.h"
 #include "../types.h"
 
@@ -50,7 +52,12 @@
    It will end up as .comm, so it shouldn't be too wasteful. */
 
 u8  __afl_area_initial[MAP_SIZE];
-u8* __afl_area_ptr = __afl_area_initial;
+u8* __afl_area_ptr = __afl_area_initial;  // [jfmcoronel] Analog below
+
+#ifdef OLIVINE_COMMON
+u8  __olivine_area_initial[OLIVINE_MAP_SIZE];
+u8* __olivine_area_ptr = __olivine_area_initial;
+#endif // OLIVINE_COMMON
 
 __thread u32 __afl_prev_loc;
 
@@ -74,20 +81,49 @@ static void __afl_map_shm(void) {
 
     u32 shm_id = atoi(id_str);
 
-    __afl_area_ptr = shmat(shm_id, NULL, 0);
+    __afl_area_ptr = shmat(shm_id, NULL, 0);  // [jfmcoronel] Analog below
 
     /* Whooooops. */
 
-    if (__afl_area_ptr == (void *)-1) _exit(1);
+    if (__afl_area_ptr == (void *)-1) _exit(1);  // [jfmcoronel] Analog below
 
     /* Write something into the bitmap so that even with low AFL_INST_RATIO,
        our parent doesn't give up on us. */
 
-    __afl_area_ptr[0] = 1;
+    __afl_area_ptr[0] = 1;  // [jfmcoronel] Analog below
 
   }
 
 }
+
+#ifdef OLIVINE_COMMON
+static void __olivine_map_shm(void) {
+
+  u8 *id_str = getenv(OLIVINE_SHM_ENV_VAR);
+
+  /* If we're running under AFL, attach to the appropriate region, replacing the
+     early-stage __afl_area_initial region that is needed to allow some really
+     hacky .init code to work correctly in projects such as OpenSSL. */
+
+  if (id_str) {
+
+    u32 shm_id = atoi(id_str);
+
+    __olivine_area_ptr = shmat(shm_id, NULL, 0);
+
+    /* Whooooops. */
+
+    if (__olivine_area_ptr == (void *)-1) _exit(1);
+
+    /* Write something into the bitmap so that even with low AFL_INST_RATIO,
+       our parent doesn't give up on us. */
+
+    __olivine_area_ptr[0] = 1;
+
+  }
+
+}
+#endif // OLIVINE_COMMON
 
 
 /* Fork server logic. */
@@ -193,8 +229,12 @@ int __afl_persistent_loop(unsigned int max_cnt) {
 
     if (is_persistent) {
 
-      memset(__afl_area_ptr, 0, MAP_SIZE);
-      __afl_area_ptr[0] = 1;
+      memset(__afl_area_ptr, 0, MAP_SIZE);  // [jfmcoronel] Analog below
+      __afl_area_ptr[0] = 1;  // [jfmcoronel] Analog below
+#ifdef OLIVINE_COMMON
+      memset(__olivine_area_ptr, 0, OLIVINE_MAP_SIZE);
+      __olivine_area_ptr[0] = 1;
+#endif // OLIVINE_COMMON
       __afl_prev_loc = 0;
     }
 
@@ -210,7 +250,10 @@ int __afl_persistent_loop(unsigned int max_cnt) {
 
       raise(SIGSTOP);
 
-      __afl_area_ptr[0] = 1;
+      __afl_area_ptr[0] = 1;  // [jfmcoronel] Analog below
+#ifdef OLIVINE_COMMON
+      __olivine_area_ptr[0] = 1;
+#endif // OLIVINE_COMMON
       __afl_prev_loc = 0;
 
       return 1;
@@ -221,7 +264,10 @@ int __afl_persistent_loop(unsigned int max_cnt) {
          follows the loop is not traced. We do that by pivoting back to the
          dummy output region. */
 
-      __afl_area_ptr = __afl_area_initial;
+      __afl_area_ptr = __afl_area_initial;  // [jfmcoronel] Analog below
+#ifdef OLIVINE_COMMON
+      __olivine_area_ptr = __olivine_area_initial;
+#endif // OLIVINE_COMMON
 
     }
 
@@ -242,6 +288,9 @@ void __afl_manual_init(void) {
   if (!init_done) {
 
     __afl_map_shm();
+#ifdef OLIVINE_COMMON
+    __olivine_map_shm();
+#endif // OLIVINE_COMMON
     __afl_start_forkserver();
     init_done = 1;
 
@@ -271,7 +320,7 @@ __attribute__((constructor(CONST_PRIO))) void __afl_auto_init(void) {
    edge (as opposed to every basic block). */
 
 void __sanitizer_cov_trace_pc_guard(uint32_t* guard) {
-  __afl_area_ptr[*guard]++;
+  __afl_area_ptr[*guard]++;  // [jfmcoronel] Probably no need for analog
 }
 
 

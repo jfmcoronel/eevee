@@ -92,6 +92,8 @@ test_build: afl-gcc afl-as afl-showmap
 	echo 0 | ./afl-showmap -m none -q -o .test-instr0 ./test-instr
 	echo 1 | ./afl-showmap -m none -q -o .test-instr1 ./test-instr
 	@rm -f test-instr
+	ls -la | grep .test-instr0
+	ls -la | grep .test-instr1
 	@cmp -s .test-instr0 .test-instr1; DR="$$?"; rm -f .test-instr0 .test-instr1; if [ "$$DR" = "0" ]; then echo; echo "Oops, the instrumentation does not seem to be behaving correctly!"; echo; echo "Please ping <lcamtuf@google.com> to troubleshoot the issue."; echo; exit 1; fi
 	@echo "[+] All right, the instrumentation seems to be working!"
 
