@@ -17,7 +17,7 @@ from olivine_helpers import (
 )
 
 # Usage:
-# python3 olivine_batch_runner.py done-pruning {jitCompilerCode} {untilNInputs} {seed}
+# python3 olivine_batch_runner.py no-pruning {jitCompilerCode} {untilNInputs} {seed}
 # python3 olivine_batch_runner.py start {jitCompilerCode} {untilNInputs} {seed}
 # python3 olivine_batch_runner.py process-corpus {jitCompilerCode} {untilNInputs} {seed}
 # python3 olivine_batch_runner.py prune-corpus-with-slave {n} {jitCompilerCode}

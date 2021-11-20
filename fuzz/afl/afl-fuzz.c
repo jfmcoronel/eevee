@@ -5009,13 +5009,17 @@ EXP_ST u8 common_fuzz_stuff(char** argv, u8* out_buf, u32 len) {
   if (stop_soon) return 1;
 
   if (fault == FAULT_TMOUT) {
+#ifdef OLIVINE_COMMON
     OLIVINE_MSGYELLOW("Detected timeout");
+#endif // OLIVINE_COMMON
 
     if (subseq_tmouts++ > TMOUT_LIMIT) {
+#ifdef OLIVINE_COMMON
       OLIVINE_MSGYELLOW("Skipped is %d > %d, but will still continue", subseq_tmouts, TMOUT_LIMIT);
       // [jfmcoronel] Process skipped timeouts anyway
       olivine_update_verdict();
       cur_skipped_paths++;
+#endif // OLIVINE_COMMON
 #ifdef IS_OLIVINE
       ret = 1;
 #else
@@ -7207,8 +7211,13 @@ static u8 fuzz_js(char** argv) {
   fuzz_inputs_dir = alloc_printf("%s/fuzz_inputs", out_dir);
   cur_input = alloc_printf("%s/.cur_input.js", out_dir);
 
+#ifdef OLIVINE_COMMON
   cmdline = alloc_printf("node %s/../TS/redis_ctrl.js getNextTestcase %s %d",
       own_loc, cur_input, olivine_round_ctr);
+#else
+  cmdline = alloc_printf("node %s/../TS/redis_ctrl.js getNextTestcase %s %d",
+      own_loc, cur_input, 0);
+#endif // OLIVINE_COMMON
 
   /*ACTF("Get a next testcase");*/
 

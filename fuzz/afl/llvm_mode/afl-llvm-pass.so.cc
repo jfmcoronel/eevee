@@ -29,6 +29,8 @@
    in ../afl-as.h.
 */
 
+#include "../olivine.h"
+
 #define AFL_LLVM_PASS
 
 #include "../config.h"
@@ -105,7 +107,13 @@ bool AFLCoverage::runOnModule(Module &M) {
 
   GlobalVariable *AFLMapPtr =
       new GlobalVariable(M, PointerType::get(Int8Ty, 0), false,
-                         GlobalValue::ExternalLinkage, 0, "__afl_area_ptr");
+                         GlobalValue::ExternalLinkage, 0, "__afl_area_ptr");  // [jfmcoronel] Analog below
+
+#ifdef OLIVINE_COMMON
+  GlobalVariable *OlivineMapPtr =
+      new GlobalVariable(M, PointerType::get(Int8Ty, 0), false,
+                         GlobalValue::ExternalLinkage, 0, "__olivine_area_ptr");
+#endif // OLIVINE_COMMON
 
   GlobalVariable *AFLPrevLoc = new GlobalVariable(
       M, Int32Ty, false, GlobalValue::ExternalLinkage, 0, "__afl_prev_loc",
@@ -141,6 +149,12 @@ bool AFLCoverage::runOnModule(Module &M) {
       MapPtr->setMetadata(M.getMDKindID("nosanitize"), MDNode::get(C, None));
       Value *MapPtrIdx =
           IRB.CreateGEP(MapPtr, IRB.CreateXor(PrevLocCasted, CurLoc));
+#ifdef OLIVINE_COMMON
+      LoadInst *ActualOlivineMapPtr = IRB.CreateLoad(OlivineMapPtr);
+      ActualOlivineMapPtr->setMetadata(M.getMDKindID("nosanitize"), MDNode::get(C, None));
+      Value *ActualOlivineMapPtrIdx =
+          IRB.CreateGEP(ActualOlivineMapPtr, IRB.CreateXor(PrevLocCasted, CurLoc));
+#endif // OLIVINE_COMMON
 
       /* Update bitmap */
 
